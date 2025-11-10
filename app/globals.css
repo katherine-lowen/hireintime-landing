@@ -105,3 +105,8 @@ input { transition: border-color .2s, box-shadow .2s; }
 /* Notes */
 .note{ font-size:12px; }
 .note--ok{ color:#0a7a32 } .note--err{ color:#b00020 } .note--warn{ color:#92400e }
+
+@media (prefers-reduced-motion: reduce) {
+  .page, .reveal { transition: none !important; animation: none !important; transform: none !important; opacity: 1 !important; }
+  .marquee__track { animation: none !important; }
+}

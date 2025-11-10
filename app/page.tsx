@@ -1,10 +1,19 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
-const ENDPOINT = process.env.NEXT_PUBLIC_FORM_ENDPOINT || "";
+const ENDPOINT = "/api/waitlist";
 
 export default function Page() {
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [mounted, setMounted] = useState(false);
+  const [offset, setOffset] = useState(0); // parallax
+
+  useEffect(() => {
+    setMounted(true);
+    const onScroll = () => setOffset(window.scrollY * 0.15); // gentle parallax
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,13 +33,9 @@ export default function Page() {
     }
   }
 
-  // simple mount fade
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   return (
-    <main className={`fade-in ${mounted ? "fade-in--show" : ""}`}>
-      {/* ===== Sticky header ===== */}
+    <main className={`page ${mounted ? "page--in" : ""}`}>
+      {/* sticky header */}
       <div className="sticky top-0 z-20 border-b border-neutral-200/70 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/50">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
@@ -47,22 +52,27 @@ export default function Page() {
         </div>
       </div>
 
-      {/* ===== HERO ===== */}
+      {/* HERO */}
       <section className="relative overflow-hidden">
-        {/* ambient shapes */}
+        {/* ambient visuals with parallax */}
         <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="hero-aurora" />
+          <div
+            className="hero-aurora"
+            style={{ transform: `translateY(${offset * -1}px)` }}
+          />
           <div className="hero-noise" />
         </div>
 
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 pb-6 pt-14 md:grid-cols-[1.1fr,0.9fr] md:gap-14 md:pb-14">
-          <div>
+          <div className="reveal">
             <span className="prebadge">
-              <span className="dot"></span> Early access cohort forming
+              <span className="dot" /> Early access cohort forming
             </span>
 
             <h1 className="hero-title">
-              The <span className="txt-gradient">time-aware</span> HR platform<br />for teams that move fast.
+              The <span className="txt-gradient txt-gradient--animate">time-aware</span> HR platform
+              <br />
+              for teams that move fast.
             </h1>
 
             <p className="mt-5 max-w-prose text-lg text-neutral-700">
@@ -83,7 +93,7 @@ export default function Page() {
                 </button>
                 {status === "ok" && <p className="note note--ok">Thanks! You’re on the list.</p>}
                 {status === "error" && <p className="note note--err">Something went wrong. Try again.</p>}
-                {!ENDPOINT && <p className="note note--warn">Set NEXT_PUBLIC_FORM_ENDPOINT in .env.local to enable submissions.</p>}
+                {!ENDPOINT && <p className="note note--warn">Set NEXT_PUBLIC_FORM_ENDPOINT in Vercel to enable submissions.</p>}
               </form>
             </div>
 
@@ -103,8 +113,8 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Right spec card */}
-          <div className="glass-card">
+          {/* spec card */}
+          <div className="glass-card reveal" style={{ transform: `translateY(${offset * 0.3}px)` }}>
             <ul className="space-y-4 text-sm text-neutral-900">
               {[
                 "Shared time context across ATS, HRIS, payroll, and calendars.",
@@ -122,11 +132,13 @@ export default function Page() {
         </div>
       </section>
 
-      {/* ===== FEATURES ===== */}
+      {/* FEATURES */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-14">
-        <div className="mb-6">
+        <div className="mb-6 reveal">
           <h2 className="section-title">What you can expect</h2>
-          <p className="text-sm text-neutral-600">A unified layer for HR & recruiting ops — built on time intelligence.</p>
+          <p className="text-sm text-neutral-600">
+            A unified layer for HR & recruiting ops — built on time intelligence.
+          </p>
         </div>
 
         <div className="grid gap-5 md:grid-cols-3">
@@ -135,7 +147,7 @@ export default function Page() {
             { t: "Onboarding", b: ["Access + equipment requests", "Policy checks (MFA, SOC, HIPAA)", "Day-1 schedules"] },
             { t: "People Ops", b: ["Org & role management", "Comp band references", "Reviews, goals, SLAs"] },
           ].map(({ t, b }) => (
-            <div key={t} className="feature-card">
+            <div key={t} className="feature-card reveal">
               <div className="feature-card__inner">
                 <h3 className="text-sm font-semibold text-neutral-900">{t}</h3>
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-700">
@@ -147,9 +159,9 @@ export default function Page() {
         </div>
       </section>
 
-      {/* ===== CTA ===== */}
+      {/* CTA */}
       <section className="mx-auto max-w-6xl px-6 pb-16">
-        <div className="cta">
+        <div className="cta reveal">
           <div className="cta__ring" />
           <div className="cta__content">
             <h3 className="text-xl font-semibold">Be first to try Intime</h3>
@@ -157,17 +169,6 @@ export default function Page() {
             <a href="#cta" className="ui-btn ui-btn--primary mt-4 w-full sm:w-auto">Join waitlist</a>
           </div>
         </div>
-      </section>
-
-      {/* ===== SPECS ===== */}
-      <section id="specs" className="mx-auto max-w-6xl px-6 pb-16">
-        <h2 className="section-title">Technical specs</h2>
-        <ul className="mt-3 list-disc space-y-2 pl-6 text-sm text-neutral-700">
-          <li>API-first design with granular permissions</li>
-          <li>Calendar & directory integrations (Google, O365, Okta, Entra)</li>
-          <li>Audit-friendly event log and workflow engine</li>
-          <li>Exportable data and webhooks</li>
-        </ul>
       </section>
 
       <footer className="border-t py-8 text-center text-sm text-neutral-600">

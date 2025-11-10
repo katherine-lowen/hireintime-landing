@@ -3,10 +3,41 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Intime — Connected HR & Recruiting",
+  title: "Intime — The time-aware HR platform",
   description:
-    "The time-aware HR platform that unifies recruiting, onboarding, scheduling, and performance.",
+    "Intime connects recruiting, onboarding, scheduling, and performance with a shared layer of time intelligence.",
+  metadataBase: new URL("https://hireintime.ai"),
   themeColor: "#ffffff",
+  openGraph: {
+    title: "Intime — The time-aware HR platform",
+    description:
+      "A unified layer for HR & recruiting ops — built on time intelligence.",
+    url: "https://hireintime.ai",
+    siteName: "Intime",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Intime",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Intime — The time-aware HR platform",
+    description:
+      "Unified time intelligence for People Ops and Recruiting teams.",
+    images: ["/og.png"],
+    creator: "@hireintime", // optional if you have a Twitter handle
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
