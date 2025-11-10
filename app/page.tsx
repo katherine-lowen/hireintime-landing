@@ -31,32 +31,45 @@ export default function Page() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setStatus("loading");
-    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
-    try {
-      const res = await fetch(ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error();
+async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  setStatus("loading");
+  const data = Object.fromEntries(new FormData(e.currentTarget).entries());
 
-      // success
-      setStatus("ok");
-      (e.currentTarget as HTMLFormElement).reset();
+  try {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error();
 
-      // Plausible conversion event
-      if (typeof window !== "undefined" && (window as any).plausible) {
-        (window as any).plausible("waitlist_submitted");
-      }
+    // success
+    setStatus("ok");
+    (e.currentTarget as HTMLFormElement).reset();
 
-    } catch {
-      setStatus("error");
+    // 🔹 Send a transactional email (best effort)
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: (data as any).email,
+        name: (data as any).name,
+      }),
+    }).catch(() => {});
+
+    // 🔹 Plausible conversion event
+    if (typeof window !== "undefined" && (window as any).plausible) {
+      (window as any).plausible("waitlist_submitted");
     }
-  }
 
+    // (Optional) redirect to success page
+    // window.location.assign("/success");
+
+  } catch {
+    setStatus("error");
+  }
+}
   return (
     <main className={`page ${mounted ? "page--in" : ""}`}>
       {/* sticky header */}
@@ -80,10 +93,7 @@ export default function Page() {
       <section className="relative overflow-hidden">
         {/* ambient visuals with parallax */}
         <div className="pointer-events-none absolute inset-0 -z-10">
-          <div
-            className="hero-aurora"
-            style={{ transform: `translateY(${offset * -1}px)` }}
-          />
+          <div className="hero-aurora" style={{ transform: `translateY(${offset * -1}px)` }} />
           <div className="hero-noise" />
         </div>
 
@@ -113,7 +123,7 @@ export default function Page() {
                   <input name="company" type="text" placeholder="Company (optional)" className="ui-input" />
                 </div>
 
-                {/* Hidden tracking fields (populated in useEffect) */}
+                {/* Hidden tracking fields */}
                 <input type="hidden" name="utm_source" />
                 <input type="hidden" name="utm_medium" />
                 <input type="hidden" name="utm_campaign" />
@@ -121,7 +131,7 @@ export default function Page() {
                 <input type="hidden" name="referrer" />
                 <input type="hidden" name="page" />
 
-                {/* Honeypot to catch bots */}
+                {/* Honeypot */}
                 <div aria-hidden="true" className="hidden">
                   <input name="website" tabIndex={-1} autoComplete="off" />
                 </div>
@@ -131,14 +141,10 @@ export default function Page() {
                 </button>
 
                 {status === "ok" && (
-                  <p aria-live="polite" className="note note--ok">
-                    Thanks! You’re on the list.
-                  </p>
+                  <p aria-live="polite" className="note note--ok">Thanks! You’re on the list.</p>
                 )}
                 {status === "error" && (
-                  <p aria-live="polite" className="note note--err">
-                    Something went wrong. Try again.
-                  </p>
+                  <p aria-live="polite" className="note note--err">Something went wrong. Try again.</p>
                 )}
               </form>
             </div>
