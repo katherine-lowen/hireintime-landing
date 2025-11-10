@@ -5,10 +5,6 @@ const ENDPOINT = "/api/waitlist";
 
 export default function Page() {
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
-  // after setStatus("ok")
-if (typeof window !== "undefined" && (window as any).plausible) {
-  (window as any).plausible("waitlist_submitted");
-}
   const [mounted, setMounted] = useState(false);
   const [offset, setOffset] = useState(0); // parallax
 
@@ -46,8 +42,16 @@ if (typeof window !== "undefined" && (window as any).plausible) {
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error();
+
+      // success
       setStatus("ok");
       (e.currentTarget as HTMLFormElement).reset();
+
+      // Plausible conversion event
+      if (typeof window !== "undefined" && (window as any).plausible) {
+        (window as any).plausible("waitlist_submitted");
+      }
+
     } catch {
       setStatus("error");
     }
