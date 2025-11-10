@@ -1,13 +1,13 @@
 // app/layout.tsx
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hireintime.ai"),
   title: "Intime — Connected HR & Recruiting",
   description:
     "The time-aware HR platform that unifies recruiting, onboarding, scheduling, and performance.",
-  themeColor: "#ffffff",
   openGraph: {
     title: "Intime — Connected HR & Recruiting",
     description:
@@ -34,6 +34,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="!bg-white !text-neutral-900">
@@ -46,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {children}
 
-        {/* Footer with links */}
+        {/* Footer */}
         <footer className="mx-auto mt-20 max-w-6xl border-t border-neutral-200 px-6 py-8 text-center text-sm text-neutral-600">
           © {new Date().getFullYear()} Intime •{" "}
           <a className="underline" href="mailto:hello@hireintime.ai">
@@ -62,7 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </a>
         </footer>
 
-        {/* Plausible analytics */}
+        {/* Plausible Analytics */}
         <Script
           defer
           data-domain="hireintime.ai"
