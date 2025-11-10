@@ -20,6 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="mx-auto mt-20 max-w-6xl px-6 border-t border-neutral-200 py-8 text-sm text-neutral-600">
           © {new Date().getFullYear()} Intime •{" "}
           <a className="underline" href="mailto:hello@hireintime.ai">hello@hireintime.ai</a>
+          <span className="mx-2">•</span>
+<a className="underline" href="/privacy">Privacy</a>
+<span className="mx-2">•</span>
+<a className="underline" href="/terms">Terms</a>
         </footer>
 
         {/* Plausible */}
