@@ -10,8 +10,24 @@ export default function Page() {
 
   useEffect(() => {
     setMounted(true);
-    const onScroll = () => setOffset(window.scrollY * 0.15); // gentle parallax
+
+    // parallax scroll
+    const onScroll = () => setOffset(window.scrollY * 0.15);
     window.addEventListener("scroll", onScroll, { passive: true });
+
+    // fill hidden tracking inputs
+    const params = new URLSearchParams(window.location.search);
+    const setHidden = (name: string, value: string) => {
+      const el = document.querySelector(`input[name="${name}"]`) as HTMLInputElement | null;
+      if (el) el.value = value;
+    };
+    setHidden("utm_source", params.get("utm_source") ?? "");
+    setHidden("utm_medium", params.get("utm_medium") ?? "");
+    setHidden("utm_campaign", params.get("utm_campaign") ?? "");
+    setHidden("utm_content", params.get("utm_content") ?? "");
+    setHidden("referrer", document.referrer ?? "");
+    setHidden("page", window.location.pathname);
+
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -88,12 +104,34 @@ export default function Page() {
                   <input name="name" type="text" placeholder="Your name" className="ui-input" />
                   <input name="company" type="text" placeholder="Company (optional)" className="ui-input" />
                 </div>
+
+                {/* Hidden tracking fields (populated in useEffect) */}
+                <input type="hidden" name="utm_source" />
+                <input type="hidden" name="utm_medium" />
+                <input type="hidden" name="utm_campaign" />
+                <input type="hidden" name="utm_content" />
+                <input type="hidden" name="referrer" />
+                <input type="hidden" name="page" />
+
+                {/* Honeypot to catch bots */}
+                <div aria-hidden="true" className="hidden">
+                  <input name="website" tabIndex={-1} autoComplete="off" />
+                </div>
+
                 <button disabled={status === "loading"} className="ui-btn ui-btn--primary w-full">
                   {status === "loading" ? "Submitting…" : "Join waitlist"}
                 </button>
-                {status === "ok" && <p className="note note--ok">Thanks! You’re on the list.</p>}
-                {status === "error" && <p className="note note--err">Something went wrong. Try again.</p>}
-                {!ENDPOINT && <p className="note note--warn">Set NEXT_PUBLIC_FORM_ENDPOINT in Vercel to enable submissions.</p>}
+
+                {status === "ok" && (
+                  <p aria-live="polite" className="note note--ok">
+                    Thanks! You’re on the list.
+                  </p>
+                )}
+                {status === "error" && (
+                  <p aria-live="polite" className="note note--err">
+                    Something went wrong. Try again.
+                  </p>
+                )}
               </form>
             </div>
 
@@ -165,14 +203,17 @@ export default function Page() {
           <div className="cta__ring" />
           <div className="cta__content">
             <h3 className="text-xl font-semibold">Be first to try Intime</h3>
-            <p className="mt-1 text-sm text-neutral-700">We’re onboarding in small cohorts. Join the waitlist to reserve a spot.</p>
+            <p className="mt-1 text-sm text-neutral-700">
+              We’re onboarding in small cohorts. Join the waitlist to reserve a spot.
+            </p>
             <a href="#cta" className="ui-btn ui-btn--primary mt-4 w-full sm:w-auto">Join waitlist</a>
           </div>
         </div>
       </section>
 
       <footer className="border-t py-8 text-center text-sm text-neutral-600">
-        © {new Date().getFullYear()} Intime • <a className="underline" href="mailto:hello@hireintime.ai">hello@hireintime.ai</a>
+        © {new Date().getFullYear()} Intime •{" "}
+        <a className="underline" href="mailto:hello@hireintime.ai">hello@hireintime.ai</a>
       </footer>
     </main>
   );
