@@ -123,3 +123,7 @@ a:hover {
 /* helper notes */
 .note { font-size:12px; }
 .note--ok { color:#0a7a32; } .note--err { color:#b00020; } .note--warn { color:#92400e; }
+
+.nav-pill { border-radius: 9999px; border: 1px solid #e5e7eb; background:#fff; padding: 8px 14px; font-size: 0.875rem; color:#111; }
+.nav-pill--primary { background:#111; color:#fff; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.nav-pill--primary:hover { background:#000; }
