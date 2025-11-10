@@ -6,16 +6,14 @@ const ENDPOINT = "/api/waitlist";
 export default function Page() {
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [mounted, setMounted] = useState(false);
-  const [offset, setOffset] = useState(0); // parallax
+  const [offset, setOffset] = useState(0);
 
   useEffect(() => {
     setMounted(true);
-
-    // parallax scroll
     const onScroll = () => setOffset(window.scrollY * 0.15);
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    // fill hidden tracking inputs
+    // Fill hidden tracking inputs
     const params = new URLSearchParams(window.location.search);
     const setHidden = (name: string, value: string) => {
       const el = document.querySelector(`input[name="${name}"]`) as HTMLInputElement | null;
@@ -31,55 +29,52 @@ export default function Page() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
-  setStatus("loading");
-  const data = Object.fromEntries(new FormData(e.currentTarget).entries());
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("loading");
+    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
 
-  try {
-    const res = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error();
+    try {
+      const res = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error();
 
-    // success
-    setStatus("ok");
-    (e.currentTarget as HTMLFormElement).reset();
+      setStatus("ok");
+      (e.currentTarget as HTMLFormElement).reset();
 
-    // 🔹 Send a transactional email (best effort)
-    fetch("/api/notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: (data as any).email,
-        name: (data as any).name,
-      }),
-    }).catch(() => {});
+      // Transactional email
+      fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: (data as any).email,
+          name: (data as any).name,
+        }),
+      }).catch(() => {});
 
-    // 🔹 Plausible conversion event
-    if (typeof window !== "undefined" && (window as any).plausible) {
-      (window as any).plausible("waitlist_submitted");
+      // Plausible conversion
+      if (typeof window !== "undefined" && (window as any).plausible) {
+        (window as any).plausible("waitlist_submitted");
+      }
+
+      // Optional redirect
+      // window.location.assign("/success");
+    } catch {
+      setStatus("error");
     }
-
-    // (Optional) redirect to success page
-    // window.location.assign("/success");
-
-  } catch {
-    setStatus("error");
   }
-}
+
   return (
     <main className={`page ${mounted ? "page--in" : ""}`}>
-      {/* sticky header */}
+      {/* Header */}
       <div className="sticky top-0 z-20 border-b border-neutral-200/70 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/50">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-2xl bg-black text-white shadow-sm">
-              <span className="text-xs">in</span>
-            </div>
-            <span className="text-sm font-medium text-neutral-800">hireintime.ai</span>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-semibold tracking-tight text-neutral-900">Intime</span>
+            <span className="text-xs font-medium text-neutral-500">HR Platform</span>
           </div>
           <nav className="hidden gap-2 md:flex">
             <a href="#features" className="nav-pill">Features</a>
@@ -89,9 +84,8 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         </div>
       </div>
 
-      {/* HERO */}
+      {/* Hero */}
       <section className="relative overflow-hidden">
-        {/* ambient visuals with parallax */}
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="hero-aurora" style={{ transform: `translateY(${offset * -1}px)` }} />
           <div className="hero-noise" />
@@ -105,8 +99,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 
             <h1 className="hero-title">
               The <span className="txt-gradient txt-gradient--animate">time-aware</span> HR platform
-              <br />
-              for teams that move fast.
+              <br /> for teams that move fast.
             </h1>
 
             <p className="mt-5 max-w-prose text-lg text-neutral-700">
@@ -114,7 +107,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
               One source of truth. Fewer tools. Faster ops.
             </p>
 
-            {/* Waitlist */}
+            {/* Waitlist form */}
             <div id="cta" className="mt-7 max-w-md">
               <form onSubmit={handleSubmit} className="space-y-3">
                 <input name="email" type="email" required placeholder="you@company.com" className="ui-input" />
@@ -123,7 +116,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
                   <input name="company" type="text" placeholder="Company (optional)" className="ui-input" />
                 </div>
 
-                {/* Hidden tracking fields */}
+                {/* Hidden fields */}
                 <input type="hidden" name="utm_source" />
                 <input type="hidden" name="utm_medium" />
                 <input type="hidden" name="utm_campaign" />
@@ -140,32 +133,13 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
                   {status === "loading" ? "Submitting…" : "Join waitlist"}
                 </button>
 
-                {status === "ok" && (
-                  <p aria-live="polite" className="note note--ok">Thanks! You’re on the list.</p>
-                )}
-                {status === "error" && (
-                  <p aria-live="polite" className="note note--err">Something went wrong. Try again.</p>
-                )}
+                {status === "ok" && <p className="note note--ok">Thanks! You’re on the list.</p>}
+                {status === "error" && <p className="note note--err">Something went wrong. Try again.</p>}
               </form>
-            </div>
-
-            {/* moving logo strip */}
-            <div className="mt-8">
-              <p className="text-xs tracking-wide text-neutral-500">Trusted by operators from</p>
-              <div className="marquee mt-2">
-                <div className="marquee__track">
-                  {["Seek", "Arc", "North", "Signal", "Core", "Pilot"].map((n) => (
-                    <span key={n} className="marquee__item">{n}</span>
-                  ))}
-                  {["Seek", "Arc", "North", "Signal", "Core", "Pilot"].map((n) => (
-                    <span key={n + "-b"} className="marquee__item">{n}</span>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* spec card */}
+          {/* Spec card */}
           <div className="glass-card reveal" style={{ transform: `translateY(${offset * 0.3}px)` }}>
             <ul className="space-y-4 text-sm text-neutral-900">
               {[
@@ -184,7 +158,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         </div>
       </section>
 
-      {/* FEATURES */}
+      {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-14">
         <div className="mb-6 reveal">
           <h2 className="section-title">What you can expect</h2>
@@ -203,7 +177,9 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
               <div className="feature-card__inner">
                 <h3 className="text-sm font-semibold text-neutral-900">{t}</h3>
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-700">
-                  {b.map((x) => <li key={x}>{x}</li>)}
+                  {b.map((x) => (
+                    <li key={x}>{x}</li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -220,14 +196,18 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
             <p className="mt-1 text-sm text-neutral-700">
               We’re onboarding in small cohorts. Join the waitlist to reserve a spot.
             </p>
-            <a href="#cta" className="ui-btn ui-btn--primary mt-4 w-full sm:w-auto">Join waitlist</a>
+            <a href="#cta" className="ui-btn ui-btn--primary mt-4 w-full sm:w-auto">
+              Join waitlist
+            </a>
           </div>
         </div>
       </section>
 
       <footer className="border-t py-8 text-center text-sm text-neutral-600">
         © {new Date().getFullYear()} Intime •{" "}
-        <a className="underline" href="mailto:hello@hireintime.ai">hello@hireintime.ai</a>
+        <a className="underline" href="mailto:hello@hireintime.ai">
+          hello@hireintime.ai
+        </a>
       </footer>
     </main>
   );
