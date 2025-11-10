@@ -10,7 +10,6 @@ export default function Page() {
     e.preventDefault();
     setStatus("loading");
     const data = Object.fromEntries(new FormData(e.currentTarget).entries());
-
     try {
       const res = await fetch(ENDPOINT, {
         method: "POST",
@@ -26,101 +25,133 @@ export default function Page() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(1000px_500px_at_50%_-200px,#eef6ff,white)]">
-      <div className="mx-auto max-w-5xl px-6">
-        {/* Header */}
-        <header className="flex items-center justify-between py-6">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-blue-600 grid place-items-center">
-              <svg width="18" height="18" viewBox="0 0 40 40" fill="none">
-                <path d="M8 20a12 12 0 0 1 24 0" stroke="#fff" strokeWidth="3" strokeLinecap="round"/>
-                <circle cx="20" cy="20" r="2.4" fill="#fff"/>
-              </svg>
+    <main>
+      {/* Hero — large left headline, subtle right “spec card” */}
+      <section className="py-14">
+        <div className="grid items-center gap-10 md:grid-cols-2">
+          <div>
+            {/* Tiny badge like Seed’s style */}
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/70 px-2.5 py-1 text-xs text-neutral-700 backdrop-blur-sm">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-black" />
+              Early access cohort forming
             </div>
-            <span className="text-sm font-medium text-neutral-700">hireintime.ai</span>
+
+            <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight text-neutral-900 md:text-6xl">
+              The time-aware HR platform
+              <br />for teams that move fast.
+            </h1>
+
+            <p className="mt-4 max-w-prose text-lg text-neutral-700">
+              Intime connects recruiting, onboarding, scheduling, and performance with a shared layer of time intelligence.
+              One source of truth. Fewer tools. Faster ops.
+            </p>
+
+            {/* Inline form */}
+            <div id="cta" className="mt-8 max-w-md">
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="you@company.com"
+                  className="w-full rounded-xl border border-neutral-300 bg-white/90 px-3 py-2 text-sm outline-none ring-0 transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
+                />
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <input
+                    name="name"
+                    type="text"
+                    placeholder="Your name"
+                    className="w-full rounded-xl border border-neutral-300 bg-white/90 px-3 py-2 text-sm outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
+                  />
+                  <input
+                    name="company"
+                    type="text"
+                    placeholder="Company (optional)"
+                    className="w-full rounded-xl border border-neutral-300 bg-white/90 px-3 py-2 text-sm outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
+                  />
+                </div>
+                <button
+                  disabled={status === "loading"}
+                  className="w-full rounded-xl bg-black py-2 text-sm font-medium text-white transition hover:bg-neutral-900"
+                >
+                  {status === "loading" ? "Submitting…" : "Join waitlist"}
+                </button>
+
+                {status === "ok" && <p className="text-xs text-green-700">Thanks! You’re on the list.</p>}
+                {status === "error" && <p className="text-xs text-red-700">Something went wrong. Try again.</p>}
+                {!ENDPOINT && (
+                  <p className="text-xs text-amber-700">Set NEXT_PUBLIC_FORM_ENDPOINT in .env.local to enable submissions.</p>
+                )}
+              </form>
+            </div>
           </div>
-          <nav className="flex items-center gap-2 text-sm">
-            <a href="#features" className="rounded-xl border px-3 py-1.5 hover:bg-neutral-100">Features</a>
-            <a href="#specs" className="rounded-xl border px-3 py-1.5 hover:bg-neutral-100">Specs</a>
-            <a href="#cta" className="rounded-xl bg-black text-white px-3 py-1.5">Join waitlist</a>
-          </nav>
-        </header>
 
-        {/* Hero */}
-        <section className="py-10">
-          <div className="grid gap-8 md:grid-cols-2 items-center">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
-                The time-aware HR platform for teams that move fast.
-              </h1>
-              <p className="mt-3 text-neutral-700 max-w-prose">
-                Intime connects recruiting, onboarding, scheduling, and performance with a shared layer of time intelligence.
-                One source of truth, fewer tools, faster ops.
-              </p>
-              <div id="cta" className="mt-6 max-w-md">
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <input name="email" type="email" required placeholder="you@company.com"
-                         className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300"/>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <input name="name" type="text" placeholder="Your name" className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"/>
-                    <input name="company" type="text" placeholder="Company (optional)" className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"/>
-                  </div>
-                  <button disabled={status==="loading"} className="w-full rounded-xl bg-black text-white py-2 text-sm">
-                    {status==="loading" ? "Submitting…" : "Join waitlist"}
-                  </button>
-                  {status==="ok" && <p className="text-xs text-green-700">Thanks! You’re on the list.</p>}
-                  {status==="error" && <p className="text-xs text-red-700">Something went wrong. Try again.</p>}
-                  {!ENDPOINT && <p className="text-xs text-amber-700">Set NEXT_PUBLIC_FORM_ENDPOINT to enable submissions.</p>}
-                </form>
-              </div>
-            </div>
+          {/* Right “spec” card */}
+          <div className="rounded-3xl border border-neutral-200 bg-white/80 p-6 shadow-[0_2px_24px_rgba(0,0,0,0.06)] backdrop-blur-sm">
+            <ul className="space-y-4 text-sm text-neutral-800">
+              {[
+                "Shared time context across ATS, HRIS, payroll, and calendars.",
+                "Orchestrate offers, onboarding, access, and reviews.",
+                "Policy-aware automations: MFA, JIT access, audits.",
+                "Real-time analytics and SLA alerts.",
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-3">
+                  <span className="mt-1 inline-block h-4 w-4 rounded-md bg-neutral-900" />
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
-            <div className="rounded-2xl border bg-white p-5 shadow-sm text-sm text-neutral-700">
-              <ul className="space-y-3">
-                <li className="flex gap-3"><span className="mt-1 h-4 w-4 rounded bg-blue-500 inline-block" /> Shared time context across ATS, HRIS, payroll, and calendars.</li>
-                <li className="flex gap-3"><span className="mt-1 h-4 w-4 rounded bg-blue-600 inline-block" /> Orchestrate offers, onboarding, access, and reviews.</li>
-                <li className="flex gap-3"><span className="mt-1 h-4 w-4 rounded bg-blue-700 inline-block" /> Policy-aware automations: MFA, JIT access, audits.</li>
-                <li className="flex gap-3"><span className="mt-1 h-4 w-4 rounded bg-blue-800 inline-block" /> Real-time analytics and SLA alerts.</li>
+      {/* Feature grid */}
+      <section id="features" className="py-6">
+        <h2 className="text-lg font-medium text-neutral-900">What you can expect</h2>
+        <p className="mt-1 text-sm text-neutral-600">
+          A unified layer for HR & recruiting ops — built on time intelligence.
+        </p>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {[
+            {
+              t: "Recruiting",
+              b: ["ATS basics without the bloat", "Calendar-aware interview loops", "Offer approvals"],
+            },
+            {
+              t: "Onboarding",
+              b: ["Access + equipment requests", "Policy checks (MFA, SOC, HIPAA)", "Day-1 schedules"],
+            },
+            {
+              t: "People Ops",
+              b: ["Org & role management", "Comp band references", "Reviews, goals, SLAs"],
+            },
+          ].map(({ t, b }) => (
+            <div
+              key={t}
+              className="rounded-3xl border border-neutral-200 bg-white/80 p-5 shadow-[0_2px_24px_rgba(0,0,0,0.05)] backdrop-blur-sm"
+            >
+              <h3 className="text-sm font-semibold text-neutral-900">{t}</h3>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-700">
+                {b.map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
               </ul>
             </div>
-          </div>
-        </section>
+          ))}
+        </div>
+      </section>
 
-        {/* Features */}
-        <section id="features" className="py-8">
-          <h2 className="text-xl font-semibold">What you can expect</h2>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            {[
-              { t: "Recruiting", b: ["ATS basics without the bloat", "Calendar-aware interview loops", "Offer approvals"] },
-              { t: "Onboarding", b: ["Access + equipment requests", "Policy checks (MFA, SOC, HIPAA)", "Day-1 schedules"] },
-              { t: "People Ops", b: ["Org & role management", "Comp band references", "Reviews, goals, SLAs"] },
-            ].map(({ t, b }) => (
-              <div key={t} className="rounded-2xl border bg-white p-5 shadow-sm">
-                <h3 className="text-sm font-semibold">{t}</h3>
-                <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-700">
-                  {b.map((x) => <li key={x}>{x}</li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Specs */}
-        <section id="specs" className="py-8">
-          <h2 className="text-xl font-semibold">Technical specs</h2>
-          <ul className="mt-3 list-disc space-y-2 pl-6 text-sm text-neutral-700">
-            <li>API-first design with granular permissions</li>
-            <li>Calendar & directory integrations (Google, O365, Okta, Entra)</li>
-            <li>Audit-friendly event log and workflow engine</li>
-            <li>Exportable data and webhooks</li>
-          </ul>
-        </section>
-
-        {/* Footer */}
-        <footer className="mt-10 border-t py-8 text-sm text-neutral-600">
-          © {new Date().getFullYear()} Intime • <a className="underline" href="mailto:hello@hireintime.ai">hello@hireintime.ai</a>
-        </footer>
-      </div>
+      {/* Specs */}
+      <section id="specs" className="py-10">
+        <h2 className="text-lg font-medium text-neutral-900">Technical specs</h2>
+        <ul className="mt-3 list-disc space-y-2 pl-6 text-sm text-neutral-700">
+          <li>API-first design with granular permissions</li>
+          <li>Calendar & directory integrations (Google, O365, Okta, Entra)</li>
+          <li>Audit-friendly event log and workflow engine</li>
+          <li>Exportable data and webhooks</li>
+        </ul>
+      </section>
     </main>
   );
 }
