@@ -26,12 +26,11 @@ export default function Page() {
 
   return (
     <main>
-      {/* Hero — large left headline, subtle right “spec card” */}
+      {/* Hero */}
       <section className="py-14">
         <div className="grid items-center gap-10 md:grid-cols-2">
           <div>
-            {/* Tiny badge like Seed’s style */}
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/70 px-2.5 py-1 text-xs text-neutral-700 backdrop-blur-sm">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs text-neutral-700">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-black" />
               Early access cohort forming
             </div>
@@ -46,7 +45,7 @@ export default function Page() {
               One source of truth. Fewer tools. Faster ops.
             </p>
 
-            {/* Inline form */}
+            {/* Form */}
             <div id="cta" className="mt-8 max-w-md">
               <form onSubmit={handleSubmit} className="space-y-3">
                 <input
@@ -54,25 +53,25 @@ export default function Page() {
                   type="email"
                   required
                   placeholder="you@company.com"
-                  className="w-full rounded-xl border border-neutral-300 bg-white/90 px-3 py-2 text-sm outline-none ring-0 transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
+                  className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
                 />
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <input
                     name="name"
                     type="text"
                     placeholder="Your name"
-                    className="w-full rounded-xl border border-neutral-300 bg-white/90 px-3 py-2 text-sm outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
                   />
                   <input
                     name="company"
                     type="text"
                     placeholder="Company (optional)"
-                    className="w-full rounded-xl border border-neutral-300 bg-white/90 px-3 py-2 text-sm outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
                   />
                 </div>
                 <button
                   disabled={status === "loading"}
-                  className="w-full rounded-xl bg-black py-2 text-sm font-medium text-white transition hover:bg-neutral-900"
+                  className="w-full rounded-xl bg-black py-2 text-sm font-medium text-white hover:bg-neutral-900"
                 >
                   {status === "loading" ? "Submitting…" : "Join waitlist"}
                 </button>
@@ -86,9 +85,9 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Right “spec” card */}
-          <div className="rounded-3xl border border-neutral-200 bg-white/80 p-6 shadow-[0_2px_24px_rgba(0,0,0,0.06)] backdrop-blur-sm">
-            <ul className="space-y-4 text-sm text-neutral-800">
+          {/* Right spec card (solid white, high contrast) */}
+          <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-[0_2px_24px_rgba(0,0,0,0.06)]">
+            <ul className="space-y-4 text-sm text-neutral-900">
               {[
                 "Shared time context across ATS, HRIS, payroll, and calendars.",
                 "Orchestrate offers, onboarding, access, and reviews.",
@@ -129,7 +128,7 @@ export default function Page() {
           ].map(({ t, b }) => (
             <div
               key={t}
-              className="rounded-3xl border border-neutral-200 bg-white/80 p-5 shadow-[0_2px_24px_rgba(0,0,0,0.05)] backdrop-blur-sm"
+              className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-[0_2px_24px_rgba(0,0,0,0.05)]"
             >
               <h3 className="text-sm font-semibold text-neutral-900">{t}</h3>
               <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-700">
