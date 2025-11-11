@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
-// Client-only AI demo widget
+// Client-only AI demo (JD ↔ Candidate Fit)
 const AiResumeMatch = dynamic(() => import("../components/ai-resume-match"), { ssr: false });
 
 const ENDPOINT = "/api/waitlist";
@@ -40,7 +40,7 @@ export default function Page() {
     const onScroll = () => setOffset(window.scrollY * 0.15);
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    // Pre-fill hidden tracking inputs
+    // Prefill tracking inputs
     const params = new URLSearchParams(window.location.search);
     const setHidden = (name: string, value: string) => {
       const el = document.querySelector(`input[name="${name}"]`) as HTMLInputElement | null;
@@ -56,65 +56,57 @@ export default function Page() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setStatus("loading");
-    const fd = new FormData(e.currentTarget);
+async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
 
-    // Ensure features is an array (works for multi-select or checkbox groups)
-    const dataObj: Record<string, any> = Object.fromEntries(fd.entries());
-    dataObj.features = fd.getAll("features");
+  // ✅ capture form before awaiting
+  const form = e.currentTarget;
 
-    try {
-      const res = await fetch(ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataObj),
-      });
-      if (!res.ok) throw new Error();
+  setStatus("loading");
 
-      setStatus("ok");
-      (e.currentTarget as HTMLFormElement).reset();
+  const fd = new FormData(form);
+  const dataObj: Record<string, any> = Object.fromEntries(fd.entries());
+  dataObj.features = fd.getAll("features");
 
-      // Owner notification (optional fire-and-forget)
-      fetch("/api/notify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: dataObj.email,
-          name: dataObj.name,
-          company: dataObj.company,
-          companySize: dataObj.companySize,
-          heardAbout: dataObj.heardAbout,
-          features: dataObj.features,
-          utm_source: dataObj.utm_source,
-          utm_medium: dataObj.utm_medium,
-          utm_campaign: dataObj.utm_campaign,
-          utm_content: dataObj.utm_content,
-          referrer: dataObj.referrer,
-          page: dataObj.page,
-        }),
-      }).catch(() => {});
+  try {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dataObj),
+    });
 
-      // Plausible
-      if (typeof window !== "undefined" && (window as any).plausible) {
-        (window as any).plausible("waitlist_submitted");
-      }
-    } catch {
-      setStatus("error");
+    const raw = await res.text();
+    let json: any = null;
+    try { json = raw ? JSON.parse(raw) : null; } catch {}
+
+    if (!res.ok) {
+      const msg = json?.error || `Request failed (${res.status}) ${raw?.slice(0,120) || ""}`;
+      throw new Error(msg);
     }
-  }
 
-  // Prefill helper: sets company size + features, scrolls to form
+    setStatus("ok");
+
+    // ✅ reset using captured form
+    form.reset();
+
+    // Fire-and-forget notify
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...dataObj }),
+    }).catch(() => {});
+
+    (window as any)?.plausible?.("waitlist_submitted");
+  } catch (err: any) {
+    console.error("WAITLIST_SUBMIT_ERROR:", err);
+    setStatus("error");
+    alert(err?.message || "Something went wrong");
+  }
+}
   function prefillAndFocus(opts: { size: CompanySize; features: string[] }) {
     const form = formRef.current;
     if (!form) return;
-
-    // Set companySize radio
-    const radios = form.querySelectorAll<HTMLInputElement>('input[name="companySize"]');
-    radios.forEach((r) => (r.checked = r.value === opts.size));
-
-    // For multi-select OR checkbox list (both named "features")
+    form.querySelectorAll<HTMLInputElement>('input[name="companySize"]').forEach((r) => (r.checked = r.value === opts.size));
     const select = form.querySelector<HTMLSelectElement>("#features");
     if (select) {
       const wanted = new Set(opts.features);
@@ -125,15 +117,13 @@ export default function Page() {
       const wanted = new Set(opts.features);
       boxes.forEach((b) => (b.checked = wanted.has(b.value)));
     }
-
     form.scrollIntoView({ behavior: "smooth", block: "start" });
-    const email = form.querySelector<HTMLInputElement>('input[name="email"]');
-    email?.focus();
+    form.querySelector<HTMLInputElement>('input[name="email"]')?.focus();
   }
 
   return (
     <main className={`page ${mounted ? "page--in" : ""}`}>
-      {/* Header */}
+      {/* HEADER */}
       <div className="sticky top-0 z-20 border-b border-neutral-200/70 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-2">
@@ -151,7 +141,7 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Hero */}
+      {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="hero-aurora" style={{ transform: `translateY(${offset * -1}px)` }} />
@@ -163,23 +153,29 @@ export default function Page() {
               <span className="dot" /> Early access cohort forming
             </span>
 
-<h1 className="hero-title mt-3">
-  The unified HR platform that connects
-  <br />
-  <span className="txt-gradient">people, time, and performance</span>.
-</h1>
+            <h1 className="hero-title mt-3">
+              The unified HR platform that connects
+              <br />
+              <span className="txt-gradient">people, time, and performance</span>.
+            </h1>
 
-<p className="mt-5 max-w-prose text-lg text-neutral-700">
-  Intime replaces disconnected HR tools with a single, intelligent layer for hiring, onboarding, scheduling, payroll, and reviews.
-  One connected system — powered by time intelligence.
-</p>
+            <p className="mt-5 max-w-prose text-lg text-neutral-700">
+              Intime replaces disconnected HR tools with a single, intelligent layer for hiring, onboarding, scheduling, payroll, and reviews.
+              One connected system — powered by time intelligence.
+            </p>
 
-<div className="mt-6 flex flex-wrap gap-3">
-  <a href="#demo" className="ui-btn ui-btn--primary">Try Intime AI</a>
-  <a href="#cta" className="ui-btn ui-btn--ghost">Join Waitlist</a>
-</div>
+            {/* CTAs */}
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a href="#demo" className="ui-btn ui-btn--primary">Try Intime AI</a>
+              <a href="#cta" className="ui-btn ui-btn--ghost">Join Waitlist</a>
+            </div>
 
-            {/* Product preview */}
+            {/* Micro-proof */}
+            <div className="mt-4 text-sm text-neutral-500">
+              Built by recruiters, powered by automation
+            </div>
+
+            {/* Product preview (replace the image with your file in /public) */}
             <div className="relative mt-8 flex justify-center">
               <div className="absolute inset-0 -z-10 mx-auto max-w-4xl rounded-3xl bg-gradient-to-tr from-indigo-50 via-emerald-50 to-transparent blur-2xl opacity-60" />
               <img
@@ -190,19 +186,15 @@ export default function Page() {
               />
             </div>
 
-            {/* Waitlist form */}
+            {/* WAITLIST FORM */}
             <div id="cta" className="mt-7 max-w-md">
               <form ref={formRef} onSubmit={handleSubmit} className="space-y-3">
-                {/* Email */}
                 <input name="email" type="email" required placeholder="you@company.com" className="ui-input" />
-
-                {/* Name + Company */}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <input name="name" type="text" required placeholder="Your name" className="ui-input" />
                   <input name="company" type="text" required placeholder="Company" className="ui-input" />
                 </div>
 
-                {/* Company size */}
                 <fieldset className="space-y-2">
                   <label className="block text-sm font-medium text-neutral-800">How big is your company?</label>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -215,7 +207,6 @@ export default function Page() {
                   </div>
                 </fieldset>
 
-                {/* Heard about us */}
                 <div className="space-y-1">
                   <label htmlFor="heardAbout" className="block text-sm font-medium text-neutral-800">
                     How did you find out about us?
@@ -228,7 +219,6 @@ export default function Page() {
                   </select>
                 </div>
 
-                {/* Features of interest (checkbox group for easier UX) */}
                 <div className="space-y-1">
                   <span className="block text-sm font-medium text-neutral-800">
                     Which features are you most interested in?
@@ -266,7 +256,7 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Spec card (uses .card you already have) */}
+          {/* Spec card */}
           <aside className="card p-6 md:p-7" style={{ transform: `translateY(${offset * 0.3}px)` }}>
             <ul className="space-y-4 text-sm text-neutral-900">
               {[
@@ -293,7 +283,6 @@ export default function Page() {
           that understands people, schedules, and context—so work flows without manual glue.
         </p>
 
-        {/* Trust row */}
         <div className="mx-auto mt-8 grid max-w-3xl grid-cols-3 gap-3 text-sm text-neutral-700">
           {[
             ["<10 min", "to set up a pilot"],
@@ -338,7 +327,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* HOW */}
       <section id="how" className="mx-auto max-w-6xl px-6 py-14">
         <h2 className="section-title mb-6">How Intime Works</h2>
         <div className="grid gap-8 md:grid-cols-3">
@@ -356,35 +345,18 @@ export default function Page() {
         </div>
       </section>
 
-      {/* 🔴 LIVE AI DEMO */}
+      {/* DEMO */}
       <section id="demo" className="mx-auto max-w-6xl px-6 py-14">
-        <h2 className="section-title">Try Intime AI</h2>
+        <h2 className="section-title">JD ↔ Candidate Fit (Demo)</h2>
         <p className="mt-1 text-sm text-neutral-600">
-          Paste a resume (or use a sample), choose a role, and get an instant match score with strengths and gaps.
+          Paste a Job Description and Candidate Notes to see an instant alignment score with explainable strengths & gaps.
         </p>
         <div className="mt-6">
           <AiResumeMatch />
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section id="testimonials" className="mx-auto max-w-5xl bg-neutral-50 px-6 py-14 text-center">
-        <h2 className="text-2xl font-semibold">What people are saying</h2>
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          {[
-            { q: "Finally, an HR system that actually saves time.", a: "Talent Ops Lead, SaaS startup" },
-            { q: "This replaces four different tools for us.", a: "COO, 120-person tech company" },
-            { q: "It’s like Rippling and Notion had a smarter baby.", a: "Head of People, Top Recruiting Firm" },
-          ].map(({ q, a }) => (
-            <div key={q} className="rounded-xl border bg-white p-6 shadow-sm">
-              <p className="italic text-neutral-700">“{q}”</p>
-              <p className="mt-3 text-sm text-neutral-500">— {a}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* PRICING */}
+      {/* PRICING (kept) */}
       <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
         <div className="mb-10 text-center">
           <h2 className="section-title text-3xl font-semibold">Early Access Pricing</h2>
@@ -495,21 +467,16 @@ export default function Page() {
         </div>
 
         <div className="mt-10 text-center text-sm text-neutral-600">
-          <p>
-            Need enterprise features or &gt;200 employees?{" "}
-            <a href="mailto:hello@hireintime.ai" className="underline">Contact us</a> for custom pricing and compliance options.
-          </p>
+          Need enterprise features or &gt;200 employees?{" "}
+          <a className="underline" href="mailto:hello@hireintime.ai">Contact us</a>.
         </div>
 
         <div className="mt-10 text-center">
           <a href="#cta" className="ui-btn ui-btn--primary">Join the Early Access Waitlist</a>
-          <p className="mt-2 text-xs text-neutral-500">
-            Joining the waitlist automatically enters your company into consideration for the free Founding Batch trial.
-          </p>
         </div>
       </section>
 
-      {/* Bottom CTA banner */}
+      {/* Bottom CTA */}
       <section className="bg-black py-12 text-center text-white">
         <h3 className="text-2xl font-semibold">Ready to work smarter?</h3>
         <p className="mt-2 text-neutral-300">Join the early access list — free for our first 50 companies.</p>

@@ -1,10 +1,10 @@
-/* Tailwind v4 */
+/* Tailwind v4 core */
 @import "tailwindcss";
 
 /* Dark variant helper (Tailwind v4) */
 @custom-variant dark (&:is(.dark *));
 
-/* Base reset */
+/* ---------------- Base ---------------- */
 html, body {
   height: 100%;
   background: #ffffff;
@@ -12,13 +12,20 @@ html, body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 /* Section + card primitives */
 .section { max-width: 72rem; margin: 0 auto; padding: 6rem 1.5rem; }
 @media (min-width: 768px) { .section { padding-top: 7rem; padding-bottom: 7rem; } }
 
-.card { border-radius: 1.25rem; border: 1px solid #e5e7eb; background:#fff; box-shadow: 0 8px 28px rgba(0,0,0,0.06); transition: transform .2s, box-shadow .2s; }
+.card {
+  border-radius: 1.25rem;
+  border: 1px solid #e5e7eb;
+  background:#fff;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.06);
+  transition: transform .2s, box-shadow .2s;
+}
 .card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
 
 /* Links & forms */
@@ -28,7 +35,7 @@ input, button { font-family: inherit; }
 button { transition: background-color .2s, color .2s, transform .15s; }
 input { transition: border-color .2s, box-shadow .2s; }
 
-/* Focus ring (no advanced CSS) */
+/* Focus ring */
 :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; border-radius: 8px; }
 
 /* Simple motion helpers */
@@ -43,14 +50,32 @@ input { transition: border-color .2s, box-shadow .2s; }
   .page, .reveal { transition: none !important; animation: none !important; transform: none !important; opacity: 1 !important; }
 }
 
-/* Pills, hero text, ambient blob (all safe) */
-.nav-pill { border-radius:9999px; border:1px solid #e5e7eb; background:#fff; padding:8px 14px; font-size:.875rem; color:#111; transition:.2s; }
+/* ---------------- Hero + nav ---------------- */
+.nav-pill {
+  border-radius:9999px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  padding:8px 14px;
+  font-size:.875rem;
+  color:#111;
+  transition:.2s;
+}
 .nav-pill--primary { background:#111; color:#fff; box-shadow:0 2px 10px rgba(0,0,0,.10); }
 .nav-pill:hover { background:#f9fafb; }
 
-.hero-title { font-size:clamp(2.75rem,5vw,4rem); line-height:1.05; font-weight:700; letter-spacing:-.02em; color:#0b0b0b; }
-.txt-gradient { background: linear-gradient(90deg, #2f79ff, #a855f7); -webkit-background-clip: text; background-clip: text; color: transparent; }
-
+.hero-title {
+  font-size:clamp(2.75rem,5vw,4rem);
+  line-height:1.05;
+  font-weight:700;
+  letter-spacing:-.02em;
+  color:#0b0b0b;
+}
+.txt-gradient {
+  background: linear-gradient(90deg, #2f79ff, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 .hero-aurora{
   position:absolute; left:-10%; top:-12%; width:52rem; height:52rem; border-radius:50%;
   background:
@@ -59,38 +84,54 @@ input { transition: border-color .2s, box-shadow .2s; }
   filter: blur(3px);
 }
 
-/* Inputs & buttons */
-.ui-input{ width:100%; border:1px solid #d1d5db; border-radius:14px; padding:11px 12px; font-size:.95rem; background:#fff; outline:none; }
+.prebadge {
+  display:inline-flex; align-items:center; gap:.5rem;
+  border-radius:9999px; background:#f3f4f6; padding:.35rem .75rem;
+  font-size:.75rem; font-weight:600; color:#374151;
+}
+.dot { width:.5rem; height:.5rem; border-radius:9999px; background:#10b981; }
+
+/* ---------------- Inputs & buttons ---------------- */
+.ui-input{
+  width:100%; border:1px solid #d1d5db; border-radius:14px;
+  padding:11px 12px; font-size:.95rem; background:#fff; outline:none;
+}
 .ui-input::placeholder{ color:#9ca3af; }
 .ui-input:focus{ border-color:#6366f1; box-shadow: 0 0 0 6px rgba(99,102,241,0.12); }
 
-.ui-btn{ display:inline-flex; align-items:center; justify-content:center; border-radius:14px; padding:11px 14px; font-size:.95rem; font-weight:500; }
-.ui-btn--primary{ background:#111; color:#fff; transition: transform .15s ease, background .2s; }
+.ui-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:14px; padding:11px 14px; font-size:.95rem; font-weight:500;
+  transition: transform .15s ease, background .2s;
+}
+.ui-btn--primary{ background:#111; color:#fff; }
 .ui-btn--primary:hover{ transform: translateY(-1px); background:#000; }
 .ui-btn--ghost{ border:1px solid #e5e7eb; background:#fff; }
 .ui-btn--ghost:hover{ background:#f9fafb; }
 
-/* Gradient-border feature cards */
+/* Bullet used in spec list */
+.bullet {
+  display:inline-block; width:.5rem; height:.5rem; border-radius:9999px;
+  background:#111; margin-top:.45rem; flex-shrink:0;
+}
+
+/* ---------------- Feature cards ---------------- */
 .feature-card{ position:relative; border-radius:22px; padding:1px; background:linear-gradient(135deg, rgba(47,121,255,.35), rgba(168,85,247,.35)); }
 .feature-card__inner{ border-radius:21px; background:#fff; padding:18px; box-shadow:0 8px 28px rgba(0,0,0,0.06); transition: transform .2s; }
 .feature-card:hover .feature-card__inner{ transform: translateY(-2px); }
 
-/* Marquee */
+/* ---------------- Marquee ---------------- */
 .marquee{ overflow:hidden; }
 .marquee__track{ display:flex; gap:28px; animation: marquee 16s linear infinite; }
 .marquee__item{ font-size:.88rem; color:#222; padding:6px 10px; border:1px solid #e5e7eb; border-radius:9999px; background:#fff; }
 @keyframes marquee{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
 
-/* CTA + notes */
+/* ---------------- Headings & notes ---------------- */
 .section-title{ font-size:1.125rem; font-weight:600; color:#0b0b0b; }
-.cta{ position:relative; border:1px solid #e5e7eb; border-radius:26px; background:#fff; overflow:hidden; }
-.cta__ring{ position:absolute; inset:-40% -20% auto -20%; height:22rem; background:radial-gradient(closest-side, rgba(47,121,255,.12), rgba(168,85,247,.10), transparent 70%); filter: blur(10px); }
-.cta__content{ position:relative; padding:22px; }
-
 .note{ font-size:12px; }
 .note--ok{ color:#0a7a32 } .note--err{ color:#b00020 } .note--warn{ color:#92400e }
 
-/* ---- shadcn/ui token mapping (v4-safe) ---- */
+/* ---------------- shadcn/ui token mapping ---------------- */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -129,6 +170,7 @@ input { transition: border-color .2s, box-shadow .2s; }
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Light tokens */
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -164,6 +206,7 @@ input { transition: border-color .2s, box-shadow .2s; }
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Dark tokens */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -200,10 +243,6 @@ input { transition: border-color .2s, box-shadow .2s; }
 
 /* Tailwind base layer mapping for shadcn/ui */
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
 }
