@@ -126,7 +126,7 @@ export default function Page() {
   }
 
   return (
-    <main className={`page ${mounted ? "page--in" : ""}`}>
+    <main className={`page px-4 sm:px-6 lg:px-8 ${mounted ? "page--in" : ""}`}>
       {/* Header */}
       <div className="sticky top-0 z-20 border-b border-neutral-200/70 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/50">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
@@ -151,7 +151,7 @@ export default function Page() {
           <div className="hero-noise" />
         </div>
 
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 pb-6 pt-14 md:grid-cols-[1.1fr,0.9fr] md:gap-14 md:pb-14">
+        <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 pb-6 pt-14 md:grid-cols-[1.1fr,0.9fr] md:gap-14 md:pb-14">
           <div className="reveal">
             <span className="prebadge">
               <span className="dot" /> Early access cohort forming
@@ -167,12 +167,16 @@ export default function Page() {
               One source of truth. Fewer tools. Faster ops.
             </p>
 
-            {/* Product preview visual (swap image when ready) */}
-            <img
-              src="/intime-dashboard-preview.png"
-              alt="Preview of the Intime dashboard"
-              className="mt-6 w-full max-w-2xl rounded-xl border shadow-sm"
-            />
+            {/* Product preview visual */}
+            <div className="relative mt-8 flex justify-center">
+              <div className="absolute inset-0 -z-10 mx-auto max-w-4xl rounded-3xl bg-gradient-to-tr from-indigo-50 via-emerald-50 to-transparent blur-2xl opacity-60" />
+              <img
+                src="/intime-dashboard-preview.png"
+                alt="Preview of the Intime dashboard"
+                className="w-full max-w-3xl rounded-2xl border border-neutral-200 shadow-lg object-cover"
+                style={{ aspectRatio: "16/9" }}
+              />
+            </div>
 
             {/* Waitlist form */}
             <div id="cta" className="mt-7 max-w-md">
@@ -456,7 +460,7 @@ export default function Page() {
                 prefillAndFocus({
                   size: "201-1000",
                   features: [
-                    "Advanced automations & workflow builder", // closest: use "Compliance & docs" + "People analytics"
+                    // Use only options from FEATURE_OPTIONS to stay consistent
                     "People analytics",
                     "Compliance & docs",
                     "Payroll integrations",
