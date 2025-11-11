@@ -349,7 +349,7 @@ export default function Page() {
           {[
             { q: "Finally, an HR system that actually saves time.", a: "Talent Ops Lead, SaaS startup" },
             { q: "This replaces four different tools for us.", a: "COO, 120-person tech company" },
-            { q: "It’s like Rippling and Notion had a smarter baby.", a: "Head of People, YC company" },
+            { q: "It’s like Rippling and Notion had a smarter baby.", a: "Head of People, Top Recruiting Firm" },
           ].map(({ q, a }) => (
             <div key={q} className="rounded-xl border bg-white p-6 shadow-sm">
               <p className="italic text-neutral-700">“{q}”</p>
