@@ -31,9 +31,9 @@ html, body {
 /* Links & forms */
 a { color: inherit; text-decoration: none; }
 a:hover { opacity: 0.9; }
-input, button { font-family: inherit; }
+input, button, select { font-family: inherit; }
 button { transition: background-color .2s, color .2s, transform .15s; }
-input { transition: border-color .2s, box-shadow .2s; }
+input, select { transition: border-color .2s, box-shadow .2s; }
 
 /* Focus ring */
 :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; border-radius: 8px; }
@@ -50,7 +50,7 @@ input { transition: border-color .2s, box-shadow .2s; }
   .page, .reveal { transition: none !important; animation: none !important; transform: none !important; opacity: 1 !important; }
 }
 
-/* ---------------- Hero + nav ---------------- */
+/* ---------------- Header + nav ---------------- */
 .nav-pill {
   border-radius:9999px;
   border:1px solid #e5e7eb;
@@ -63,6 +63,7 @@ input { transition: border-color .2s, box-shadow .2s; }
 .nav-pill--primary { background:#111; color:#fff; box-shadow:0 2px 10px rgba(0,0,0,.10); }
 .nav-pill:hover { background:#f9fafb; }
 
+/* Hero */
 .hero-title {
   font-size:clamp(2.75rem,5vw,4rem);
   line-height:1.05;
@@ -102,12 +103,31 @@ input { transition: border-color .2s, box-shadow .2s; }
 .ui-btn{
   display:inline-flex; align-items:center; justify-content:center;
   border-radius:14px; padding:11px 14px; font-size:.95rem; font-weight:500;
-  transition: transform .15s ease, background .2s;
+  transition: transform .15s ease, background .2s, border-color .2s, color .2s;
+  border:1px solid #e5e7eb;
 }
-.ui-btn--primary{ background:#111; color:#fff; }
+.ui-btn--primary{ background:#111; color:#fff; border-color:#111; }
 .ui-btn--primary:hover{ transform: translateY(-1px); background:#000; }
-.ui-btn--ghost{ border:1px solid #e5e7eb; background:#fff; }
+.ui-btn--ghost{ background:#fff; }
 .ui-btn--ghost:hover{ background:#f9fafb; }
+
+/* Make native controls feel consistent */
+input[type="radio"], input[type="checkbox"] { accent-color: #111; }
+
+/* ---------------- Tile selectors (radio/checkbox “pills”) ---------------- */
+/* Usage: <label class="tile"> <input ...> <span>Label</span> </label> */
+label.tile{
+  display:flex; align-items:center; gap:.5rem;
+  min-height:2.5rem; padding:.5rem .75rem;
+  border:1px solid #e5e7eb; background:#fff; color:#111;
+  border-radius:.75rem; font-size:.9rem;
+  transition:border-color .2s, background .2s, box-shadow .2s;
+}
+label.tile:hover{ border-color:#d4d4d8; }
+label.tile:focus-within{ box-shadow:0 0 0 4px rgba(0,0,0,.06); }
+label.tile:has(:checked){
+  border-color:#111; background:#fafafa;
+}
 
 /* Bullet used in spec list */
 .bullet {

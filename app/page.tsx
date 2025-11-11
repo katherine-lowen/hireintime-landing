@@ -56,62 +56,58 @@ export default function Page() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    setStatus("loading");
 
-  // ✅ capture form before awaiting
-  const form = e.currentTarget;
+    const fd = new FormData(form);
+    const dataObj: Record<string, any> = Object.fromEntries(fd.entries());
+    dataObj.features = fd.getAll("features");
 
-  setStatus("loading");
+    try {
+      const res = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataObj),
+      });
 
-  const fd = new FormData(form);
-  const dataObj: Record<string, any> = Object.fromEntries(fd.entries());
-  dataObj.features = fd.getAll("features");
+      const raw = await res.text();
+      let json: any = null;
+      try {
+        json = raw ? JSON.parse(raw) : null;
+      } catch {}
 
-  try {
-    const res = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dataObj),
-    });
+      if (!res.ok) {
+        const msg = json?.error || `Request failed (${res.status}) ${raw?.slice(0, 120) || ""}`;
+        throw new Error(msg);
+      }
 
-    const raw = await res.text();
-    let json: any = null;
-    try { json = raw ? JSON.parse(raw) : null; } catch {}
+      setStatus("ok");
+      form.reset();
 
-    if (!res.ok) {
-      const msg = json?.error || `Request failed (${res.status}) ${raw?.slice(0,120) || ""}`;
-      throw new Error(msg);
+      // Fire-and-forget notify
+      fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...dataObj }),
+      }).catch(() => {});
+
+      (window as any)?.plausible?.("waitlist_submitted");
+    } catch (err: any) {
+      console.error("WAITLIST_SUBMIT_ERROR:", err);
+      setStatus("error");
+      alert(err?.message || "Something went wrong");
     }
-
-    setStatus("ok");
-
-    // ✅ reset using captured form
-    form.reset();
-
-    // Fire-and-forget notify
-    fetch("/api/notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...dataObj }),
-    }).catch(() => {});
-
-    (window as any)?.plausible?.("waitlist_submitted");
-  } catch (err: any) {
-    console.error("WAITLIST_SUBMIT_ERROR:", err);
-    setStatus("error");
-    alert(err?.message || "Something went wrong");
   }
-}
+
   function prefillAndFocus(opts: { size: CompanySize; features: string[] }) {
     const form = formRef.current;
     if (!form) return;
-    form.querySelectorAll<HTMLInputElement>('input[name="companySize"]').forEach((r) => (r.checked = r.value === opts.size));
-    const select = form.querySelector<HTMLSelectElement>("#features");
-    if (select) {
-      const wanted = new Set(opts.features);
-      Array.from(select.options).forEach((o) => (o.selected = wanted.has(o.value)));
-    }
+    form
+      .querySelectorAll<HTMLInputElement>('input[name="companySize"]')
+      .forEach((r) => (r.checked = r.value === opts.size));
+
     const boxes = form.querySelectorAll<HTMLInputElement>('input[name="features"]');
     if (boxes.length) {
       const wanted = new Set(opts.features);
@@ -170,93 +166,116 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
               <a href="#cta" className="ui-btn ui-btn--ghost">Join Waitlist</a>
             </div>
 
-            {/* Micro-proof */}
-            <div className="mt-4 text-sm text-neutral-500">
-              Built by recruiters, powered by automation
-            </div>
-
-            {/* Product preview (replace the image with your file in /public) */}
+            {/* Preview */}
             <div className="relative mt-8 flex justify-center">
-              <div className="absolute inset-0 -z-10 mx-auto max-w-4xl rounded-3xl bg-gradient-to-tr from-indigo-50 via-emerald-50 to-transparent blur-2xl opacity-60" />
+              <div className="absolute inset-0 -z-10 mx-auto max-w-4xl rounded-3xl bg-gradient-to-tr from-indigo-50 via-emerald-50 to-transparent opacity-60 blur-2xl" />
               <img
                 src="/intime-dashboard-preview.png"
                 alt="Preview of the Intime dashboard"
-                className="w-full max-w-3xl rounded-2xl border border-neutral-200 shadow-lg object-cover"
+                className="w-full max-w-3xl rounded-2xl border border-neutral-200 object-cover shadow-lg"
                 style={{ aspectRatio: "16/9" }}
               />
             </div>
 
-            {/* WAITLIST FORM */}
-            <div id="cta" className="mt-7 max-w-md">
-              <form ref={formRef} onSubmit={handleSubmit} className="space-y-3">
-                <input name="email" type="email" required placeholder="you@company.com" className="ui-input" />
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <input name="name" type="text" required placeholder="Your name" className="ui-input" />
-                  <input name="company" type="text" required placeholder="Company" className="ui-input" />
-                </div>
-
-                <fieldset className="space-y-2">
-                  <label className="block text-sm font-medium text-neutral-800">How big is your company?</label>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {(["1-10","11-50","51-200","201-1000","1000+"] as CompanySize[]).map((size) => (
-                      <label key={size} className="flex items-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm">
-                        <input type="radio" name="companySize" value={size} required className="h-4 w-4" />
-                        <span>{size}</span>
-                      </label>
-                    ))}
+            {/* WAITLIST */}
+            <div id="cta" className="mt-8">
+              <div className="mx-auto w-full max-w-xl rounded-2xl border border-neutral-200 bg-white/90 p-6 shadow-sm backdrop-blur md:p-7">
+                <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+                  {/* Row: email + name/company */}
+                  <div className="grid grid-cols-1 gap-3">
+                    <input name="email" type="email" required placeholder="you@company.com" className="ui-input" />
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <input name="name" type="text" required placeholder="Your name" className="ui-input" />
+                      <input name="company" type="text" required placeholder="Company" className="ui-input" />
+                    </div>
                   </div>
-                </fieldset>
 
-                <div className="space-y-1">
-                  <label htmlFor="heardAbout" className="block text-sm font-medium text-neutral-800">
-                    How did you find out about us?
-                  </label>
-                  <select id="heardAbout" name="heardAbout" required defaultValue="" className="ui-input">
-                    <option value="" disabled>Select one</option>
-                    {(["LinkedIn","Product Hunt","YC","Friend/Colleague","Search","Other"] as HeardAbout[]).map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                </div>
+                  {/* Company size — responsive 2-col tile grid */}
+                  <fieldset className="space-y-2">
+                    <label className="block text-sm font-medium text-neutral-800">
+                      How big is your company?
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {(["1-10","11-50","51-200","201-1000","1000+"] as CompanySize[]).map((size) => (
+                        <label
+                          key={size}
+                          className="group flex h-10 items-center justify-start gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-sm transition hover:border-neutral-300 has-[:checked]:border-neutral-800 has-[:checked]:bg-neutral-50"
+                        >
+                          <input
+                            type="radio"
+                            name="companySize"
+                            value={size}
+                            required
+                            className="h-4 w-4 accent-black"
+                          />
+                          <span className="select-none">{size}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
 
-                <div className="space-y-1">
-                  <span className="block text-sm font-medium text-neutral-800">
-                    Which features are you most interested in?
-                  </span>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {FEATURE_OPTIONS.map((label) => (
-                      <label key={label} className="flex items-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm">
-                        <input type="checkbox" name="features" value={label} className="h-4 w-4" />
-                        <span>{label}</span>
-                      </label>
-                    ))}
+                  {/* Heard about */}
+                  <div className="space-y-1">
+                    <label htmlFor="heardAbout" className="block text-sm font-medium text-neutral-800">
+                      How did you find out about us?
+                    </label>
+                    <select id="heardAbout" name="heardAbout" required defaultValue="" className="ui-input">
+                      <option value="" disabled>Select one</option>
+                      {(
+                        ["LinkedIn","Product Hunt","YC","Friend/Colleague","Search","Other"] as HeardAbout[]
+                      ).map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
                   </div>
-                </div>
 
-                {/* Hidden tracking */}
-                <input type="hidden" name="utm_source" />
-                <input type="hidden" name="utm_medium" />
-                <input type="hidden" name="utm_campaign" />
-                <input type="hidden" name="utm_content" />
-                <input type="hidden" name="referrer" />
-                <input type="hidden" name="page" />
+                  {/* Features — responsive 2-col tile grid */}
+                  <div className="space-y-2">
+                    <span className="block text-sm font-medium text-neutral-800">
+                      Which features are you most interested in?
+                    </span>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {FEATURE_OPTIONS.map((label) => (
+                        <label
+                          key={label}
+                          className="group flex min-h-10 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm transition hover:border-neutral-300 has-[:checked]:border-neutral-800 has-[:checked]:bg-neutral-50"
+                        >
+                          <input type="checkbox" name="features" value={label} className="h-4 w-4 accent-black" />
+                          <span className="select-none">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
 
-                {/* Honeypot */}
-                <div aria-hidden="true" className="hidden">
-                  <input name="website" tabIndex={-1} autoComplete="off" />
-                </div>
+                  {/* Hidden tracking */}
+                  <input type="hidden" name="utm_source" />
+                  <input type="hidden" name="utm_medium" />
+                  <input type="hidden" name="utm_campaign" />
+                  <input type="hidden" name="utm_content" />
+                  <input type="hidden" name="referrer" />
+                  <input type="hidden" name="page" />
 
-                <button disabled={status === "loading"} className="ui-btn ui-btn--primary w-full">
-                  {status === "loading" ? "Submitting…" : "Join waitlist"}
-                </button>
+                  {/* Honeypot */}
+                  <div aria-hidden="true" className="hidden">
+                    <input name="website" tabIndex={-1} autoComplete="off" />
+                  </div>
 
-                {status === "ok" && <p className="note note--ok">Thanks! You’re on the list.</p>}
-                {status === "error" && <p className="note note--err">Something went wrong. Try again.</p>}
-              </form>
+                  <button disabled={status === "loading"} className="ui-btn ui-btn--primary w-full">
+                    {status === "loading" ? "Submitting…" : "Join waitlist"}
+                  </button>
+
+                  {status === "ok" && (
+                    <p className="note note--ok">Thanks! You’re on the list.</p>
+                  )}
+                  {status === "error" && (
+                    <p className="note note--err">Something went wrong. Try again.</p>
+                  )}
+                </form>
+              </div>
             </div>
           </div>
 
-          {/* Spec card */}
+          {/* Right info card */}
           <aside className="card p-6 md:p-7" style={{ transform: `translateY(${offset * 0.3}px)` }}>
             <ul className="space-y-4 text-sm text-neutral-900">
               {[
@@ -356,7 +375,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         </div>
       </section>
 
-      {/* PRICING (kept) */}
+      {/* PRICING */}
       <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
         <div className="mb-10 text-center">
           <h2 className="section-title text-3xl font-semibold">Early Access Pricing</h2>
