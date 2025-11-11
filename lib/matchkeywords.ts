@@ -1,5 +1,6 @@
 // /lib/matchkeywords.ts
-// Robust, deterministic JD ↔ Candidate scoring with multiple extraction fallbacks.
+// Robust, deterministic JD ↔ Candidate scoring with multi-pass extraction,
+// synonym expansion, fragment-level matching, and weighted scoring.
 
 type MatchResult = {
   overallScore: number;
@@ -22,9 +23,13 @@ type MatchResult = {
 
 // ---------- Tunables ----------
 const WEIGHTS = { must: 0.6, nice: 0.3, general: 0.1 };
-const MATCH_THRESHOLD = 0.55;      // token overlap threshold
 const MIN_PHRASE_TOKENS = 2;
-const MAX_PHRASES_PER_BUCKET = 24; // UI-friendly cap
+const MAX_PHRASES_PER_BUCKET = 24; // keep UI tidy
+
+// thresholds for fragment-level match
+const THRESH_SIM = 0.35;   // Jaccard similarity for a fragment vs candidate text
+const THRESH_OVERLAP = 0.5; // fraction of fragment tokens present in candidate
+const NOISE_FLOOR = 5;     // minimum score shown when there is *some* signal
 
 // ---------- Text helpers ----------
 const stop = new Set([
@@ -33,23 +38,23 @@ const stop = new Set([
   "i","will","can","may","etc","using","use","used","including","include",
   "experience","ability","skills","skill","required","requirements",
   "preferred","nice","have","must","role","responsibilities","about",
-  "our","your","their","team","teams","work","works"
+  "our","your","their","team","teams","work","works","from","into","across"
 ]);
 
-// common synonyms/aliases -> expand in candidate text so overlap hits
+// common synonyms/aliases to expand candidate text so matches fire more often
 const ALIASES: Record<string, string[]> = {
-  "go to market": ["gtm","go-to-market"],
+  "go to market": ["gtm","go-to-market","go to market strategy","launch strategy"],
   "product marketing": ["pmm","product marketing manager"],
-  "javascript": ["js"],
+  "positioning": ["messaging","narrative","storytelling"],
+  "analytics": ["ga4","google analytics","hubspot","looker","tableau","amplitude"],
   "postgresql": ["postgres","psql"],
   "human resources": ["hr"],
-  "customer relationship management": ["crm"],
   "okrs": ["okr","objectives and key results"],
   "machine learning": ["ml"],
   "artificial intelligence": ["ai"],
   "sql": ["structured query language"],
-  "lifecycle": ["life cycle","life-cycle"],
-  "messaging": ["positioning & messaging","positioning and messaging"],
+  "lifecycle": ["life cycle","life-cycle","customer lifecycle"],
+  "sales enablement": ["product sales","field enablement","sales collateral"]
 };
 
 function normalize(s: string) {
@@ -98,12 +103,12 @@ function bigrams(tokens: string[]) {
   }
   return out;
 }
-function topKeywords(text: string, k = 12) {
+function topKeywords(text: string, k = 16) {
   const toks = tokenize(text);
   const bi = bigrams(toks);
   const freq = new Map<string, number>();
   for (const t of toks) freq.set(t, (freq.get(t) || 0) + 1);
-  for (const b of bi) freq.set(b, (freq.get(b) || 0) + 2); // weight bigrams more
+  for (const b of bi) freq.set(b, (freq.get(b) || 0) + 2); // weight bigrams
   return Array.from(freq.entries())
     .sort((a,b) => b[1]-a[1])
     .slice(0, k)
@@ -115,23 +120,21 @@ function extractPhrases(jd: string) {
   const sents = splitSentences(jd);
   const rawPieces = [
     ...lines,
-    ...sents.filter(s => s.length < 160), // ignore long paragraphs
-    ...topKeywords(jd, 16),
+    ...sents.filter(s => s.length < 160),
+    ...topKeywords(jd, 18),
   ];
-
   const phrases = uniq(
     rawPieces
       .map(p => p.replace(/\s+/g, " ").trim())
       .filter(Boolean)
       .filter(p => tokenize(p).length >= MIN_PHRASE_TOKENS)
   );
-
   return phrases;
 }
 
 function bucketize(jd: string) {
   const phrases = extractPhrases(jd);
-  const byLine = splitLines(jd).join("\n");
+  const lineBlob = splitLines(jd).join("\n");
 
   const mustMarkers = /(must[-\s]?have|required|min(imum)?|need(ed)? to|we need)/i;
   const niceMarkers = /(nice[-\s]?to[-\s]?have|preferred|bonus|plus)/i;
@@ -142,28 +145,26 @@ function bucketize(jd: string) {
     general: new Set<string>(),
   };
 
-  // try to infer by local context (line contains marker words)
   for (const p of phrases) {
-    // find string around phrase (fallback to full JD if not present)
-    const idx = byLine.toLowerCase().indexOf(p.toLowerCase());
-    const window = idx >= 0 ? byLine.slice(Math.max(0, idx - 80), idx + p.length + 80) : jd;
+    const idx = lineBlob.toLowerCase().indexOf(p.toLowerCase());
+    const window = idx >= 0 ? lineBlob.slice(Math.max(0, idx - 80), idx + p.length + 80) : jd;
     if (mustMarkers.test(window)) buckets.must.add(p);
     else if (niceMarkers.test(window)) buckets.nice.add(p);
     else buckets.general.add(p);
   }
 
-  // Fallbacks: if a bucket is empty, fill from phrases evenly
-  if (![...buckets.must].length && [...phrases].length) {
+  // Fallbacks to ensure non-empty buckets
+  if (![...buckets.must].length && phrases.length) {
     phrases.slice(0, 12).forEach(p => buckets.must.add(p));
   }
-  if (![...buckets.nice].length && [...phrases].length > 12) {
+  if (![...buckets.nice].length && phrases.length > 12) {
     phrases.slice(12, 20).forEach(p => buckets.nice.add(p));
   }
-  if (![...buckets.general].length && [...phrases].length > 20) {
+  if (![...buckets.general].length && phrases.length > 20) {
     phrases.slice(20, 32).forEach(p => buckets.general.add(p));
   }
 
-  // cap sizes so UI stays tidy
+  // cap sizes
   (["must","nice","general"] as const).forEach(b => {
     const arr = Array.from(buckets[b]).slice(0, MAX_PHRASES_PER_BUCKET);
     buckets[b] = new Set(arr);
@@ -185,12 +186,43 @@ function expandAliases(text: string) {
   return out;
 }
 
+// ---------- Matching ----------
+function fragmentize(phrase: string) {
+  // Convert to clean token string, then break on list separators/coordination
+  return tokenize(phrase)
+    .join(" ")
+    .split(/,|;| and | or /g)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 2);
+}
+
 function matchAgainst(candidateText: string, phrases: Set<string>) {
   const matched: string[] = [];
   const missing: string[] = [];
+  const candidateTokens = tokenize(candidateText);
+  const candidateSet = new Set(candidateTokens);
+
   for (const p of phrases) {
-    const score = jaccardTokens(p, candidateText);
-    (score >= MATCH_THRESHOLD ? matched : missing).push(p);
+    const frags = fragmentize(p);
+    let hit = false;
+    for (const frag of frags) {
+      const sim = jaccardTokens(frag, candidateText);
+      const fragTokens = tokenize(frag);
+      const overlap = fragTokens.length
+        ? fragTokens.filter((t) => candidateSet.has(t)).length / fragTokens.length
+        : 0;
+      if (sim >= THRESH_SIM || overlap >= THRESH_OVERLAP) {
+        hit = true;
+        break;
+      }
+
+      // single-token exacts for named tech (ga4, hubspot, sql)
+      if (fragTokens.length === 1 && candidateSet.has(fragTokens[0])) {
+        hit = true;
+        break;
+      }
+    }
+    (hit ? matched : missing).push(p);
   }
   return { matched, missing };
 }
@@ -218,12 +250,17 @@ export async function scoreJDandCandidate(
   const niceRatio = niceTotal ? nice.matched.length / niceTotal : 0;
   const genRatio  = genTotal  ? gen.matched.length  / genTotal  : 0;
 
-  const raw =
+  const weighted =
     WEIGHTS.must * mustRatio +
     WEIGHTS.nice * niceRatio +
     WEIGHTS.general * genRatio;
 
-  const overallScore = Math.round(raw * 100);
+  let score = Math.round(weighted * 100);
+  // If there is *any* match signal, apply a small noise floor to avoid "0%"
+  const anyHit = must.matched.length + nice.matched.length + gen.matched.length > 0;
+  if (anyHit) score = Math.max(NOISE_FLOOR, score);
+  const overallScore = Math.min(100, score);
+
   const verdict: MatchResult["verdict"] =
     overallScore >= 80 ? "Strong match" :
     overallScore >= 60 ? "Partial match" :
