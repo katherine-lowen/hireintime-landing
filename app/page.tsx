@@ -74,9 +74,7 @@ export default function Page() {
 
       const raw = await res.text();
       let json: any = null;
-      try {
-        json = raw ? JSON.parse(raw) : null;
-      } catch {}
+      try { json = raw ? JSON.parse(raw) : null; } catch {}
 
       if (!res.ok) {
         const msg = json?.error || `Request failed (${res.status}) ${raw?.slice(0, 120) || ""}`;
@@ -104,10 +102,7 @@ export default function Page() {
   function prefillAndFocus(opts: { size: CompanySize; features: string[] }) {
     const form = formRef.current;
     if (!form) return;
-    form
-      .querySelectorAll<HTMLInputElement>('input[name="companySize"]')
-      .forEach((r) => (r.checked = r.value === opts.size));
-
+    form.querySelectorAll<HTMLInputElement>('input[name="companySize"]').forEach((r) => (r.checked = r.value === opts.size));
     const boxes = form.querySelectorAll<HTMLInputElement>('input[name="features"]');
     if (boxes.length) {
       const wanted = new Set(opts.features);
@@ -166,7 +161,7 @@ export default function Page() {
               <a href="#cta" className="ui-btn ui-btn--ghost">Join Waitlist</a>
             </div>
 
-            {/* Preview */}
+            {/* Preview (optional image in /public) */}
             <div className="relative mt-8 flex justify-center">
               <div className="absolute inset-0 -z-10 mx-auto max-w-4xl rounded-3xl bg-gradient-to-tr from-indigo-50 via-emerald-50 to-transparent opacity-60 blur-2xl" />
               <img
@@ -177,9 +172,16 @@ export default function Page() {
               />
             </div>
 
-            {/* WAITLIST */}
-            <div id="cta" className="mt-8">
-              <div className="mx-auto w-full max-w-xl rounded-2xl border border-neutral-200 bg-white/90 p-6 shadow-sm backdrop-blur md:p-7">
+            {/* WAITLIST (with header) */}
+            <div id="cta" className="mt-14">
+              <div className="mx-auto w-full max-w-xl rounded-2xl border border-neutral-200 bg-white/90 p-8 shadow-sm backdrop-blur md:p-10">
+                <div className="mb-6 text-center">
+                  <h2 className="text-2xl font-semibold text-neutral-900">Join the Intime Waitlist</h2>
+                  <p className="mt-2 text-sm text-neutral-600">
+                    Be first to try our unified HR platform — one connected system for people, time, and performance.
+                  </p>
+                </div>
+
                 <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
                   {/* Row: email + name/company */}
                   <div className="grid grid-cols-1 gap-3">
@@ -190,25 +192,16 @@ export default function Page() {
                     </div>
                   </div>
 
-                  {/* Company size — responsive 2-col tile grid */}
+                  {/* Company size */}
                   <fieldset className="space-y-2">
                     <label className="block text-sm font-medium text-neutral-800">
                       How big is your company?
                     </label>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {(["1-10","11-50","51-200","201-1000","1000+"] as CompanySize[]).map((size) => (
-                        <label
-                          key={size}
-                          className="group flex h-10 items-center justify-start gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-sm transition hover:border-neutral-300 has-[:checked]:border-neutral-800 has-[:checked]:bg-neutral-50"
-                        >
-                          <input
-                            type="radio"
-                            name="companySize"
-                            value={size}
-                            required
-                            className="h-4 w-4 accent-black"
-                          />
-                          <span className="select-none">{size}</span>
+                        <label key={size} className="tile">
+                          <input type="radio" name="companySize" value={size} required />
+                          <span>{size}</span>
                         </label>
                       ))}
                     </div>
@@ -229,19 +222,16 @@ export default function Page() {
                     </select>
                   </div>
 
-                  {/* Features — responsive 2-col tile grid */}
+                  {/* Features */}
                   <div className="space-y-2">
                     <span className="block text-sm font-medium text-neutral-800">
                       Which features are you most interested in?
                     </span>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {FEATURE_OPTIONS.map((label) => (
-                        <label
-                          key={label}
-                          className="group flex min-h-10 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm transition hover:border-neutral-300 has-[:checked]:border-neutral-800 has-[:checked]:bg-neutral-50"
-                        >
-                          <input type="checkbox" name="features" value={label} className="h-4 w-4 accent-black" />
-                          <span className="select-none">{label}</span>
+                        <label key={label} className="tile">
+                          <input type="checkbox" name="features" value={label} />
+                          <span>{label}</span>
                         </label>
                       ))}
                     </div>
@@ -264,12 +254,8 @@ export default function Page() {
                     {status === "loading" ? "Submitting…" : "Join waitlist"}
                   </button>
 
-                  {status === "ok" && (
-                    <p className="note note--ok">Thanks! You’re on the list.</p>
-                  )}
-                  {status === "error" && (
-                    <p className="note note--err">Something went wrong. Try again.</p>
-                  )}
+                  {status === "ok" && <p className="note note--ok">Thanks! You’re on the list.</p>}
+                  {status === "error" && <p className="note note--err">Something went wrong. Try again.</p>}
                 </form>
               </div>
             </div>
