@@ -163,15 +163,21 @@ export default function Page() {
               <span className="dot" /> Early access cohort forming
             </span>
 
-            <h1 className="hero-title mt-3">
-              The <span className="txt-gradient">time-aware</span> HR platform
-              <br /> for teams that move fast.
-            </h1>
+<h1 className="hero-title mt-3">
+  The unified HR platform that connects
+  <br />
+  <span className="txt-gradient">people, time, and performance</span>.
+</h1>
 
-            <p className="mt-5 max-w-prose text-lg text-neutral-700">
-              Intime connects recruiting, onboarding, scheduling, payroll, and performance with a shared layer of time intelligence.
-              One source of truth. Fewer tools. Faster ops.
-            </p>
+<p className="mt-5 max-w-prose text-lg text-neutral-700">
+  Intime replaces disconnected HR tools with a single, intelligent layer for hiring, onboarding, scheduling, payroll, and reviews.
+  One connected system — powered by time intelligence.
+</p>
+
+<div className="mt-6 flex flex-wrap gap-3">
+  <a href="#demo" className="ui-btn ui-btn--primary">Try Intime AI</a>
+  <a href="#cta" className="ui-btn ui-btn--ghost">Join Waitlist</a>
+</div>
 
             {/* Product preview */}
             <div className="relative mt-8 flex justify-center">
