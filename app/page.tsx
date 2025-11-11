@@ -2,6 +2,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+
+// Client-only AI demo widget
+const AiResumeMatch = dynamic(() => import("../components/ai-resume-match"), { ssr: false });
 
 const ENDPOINT = "/api/waitlist";
 
@@ -57,7 +61,7 @@ export default function Page() {
     setStatus("loading");
     const fd = new FormData(e.currentTarget);
 
-    // Ensure features is an array
+    // Ensure features is an array (works for multi-select or checkbox groups)
     const dataObj: Record<string, any> = Object.fromEntries(fd.entries());
     dataObj.features = fd.getAll("features");
 
@@ -72,23 +76,23 @@ export default function Page() {
       setStatus("ok");
       (e.currentTarget as HTMLFormElement).reset();
 
-      // Owner notification (matches your /api/notify route)
+      // Owner notification (optional fire-and-forget)
       fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: (dataObj as any).email,
-          name: (dataObj as any).name,
-          company: (dataObj as any).company,
-          companySize: (dataObj as any).companySize,
-          heardAbout: (dataObj as any).heardAbout,
-          features: (dataObj as any).features,
-          utm_source: (dataObj as any).utm_source,
-          utm_medium: (dataObj as any).utm_medium,
-          utm_campaign: (dataObj as any).utm_campaign,
-          utm_content: (dataObj as any).utm_content,
-          referrer: (dataObj as any).referrer,
-          page: (dataObj as any).page,
+          email: dataObj.email,
+          name: dataObj.name,
+          company: dataObj.company,
+          companySize: dataObj.companySize,
+          heardAbout: dataObj.heardAbout,
+          features: dataObj.features,
+          utm_source: dataObj.utm_source,
+          utm_medium: dataObj.utm_medium,
+          utm_campaign: dataObj.utm_campaign,
+          utm_content: dataObj.utm_content,
+          referrer: dataObj.referrer,
+          page: dataObj.page,
         }),
       }).catch(() => {});
 
@@ -110,25 +114,27 @@ export default function Page() {
     const radios = form.querySelectorAll<HTMLInputElement>('input[name="companySize"]');
     radios.forEach((r) => (r.checked = r.value === opts.size));
 
-    // Set features multi-select
-    const sel = form.querySelector<HTMLSelectElement>("#features");
-    if (sel) {
+    // For multi-select OR checkbox list (both named "features")
+    const select = form.querySelector<HTMLSelectElement>("#features");
+    if (select) {
       const wanted = new Set(opts.features);
-      Array.from(sel.options).forEach((o) => {
-        o.selected = wanted.has(o.value);
-      });
+      Array.from(select.options).forEach((o) => (o.selected = wanted.has(o.value)));
+    }
+    const boxes = form.querySelectorAll<HTMLInputElement>('input[name="features"]');
+    if (boxes.length) {
+      const wanted = new Set(opts.features);
+      boxes.forEach((b) => (b.checked = wanted.has(b.value)));
     }
 
-    // Smooth scroll + focus email
     form.scrollIntoView({ behavior: "smooth", block: "start" });
     const email = form.querySelector<HTMLInputElement>('input[name="email"]');
-    if (email) email.focus();
+    email?.focus();
   }
 
   return (
-    <main className={`page px-4 sm:px-6 lg:px-8 ${mounted ? "page--in" : ""}`}>
+    <main className={`page ${mounted ? "page--in" : ""}`}>
       {/* Header */}
-      <div className="sticky top-0 z-20 border-b border-neutral-200/70 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/50">
+      <div className="sticky top-0 z-20 border-b border-neutral-200/70 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-2">
             <span className="text-lg font-semibold tracking-tight text-neutral-900">Intime</span>
@@ -138,6 +144,7 @@ export default function Page() {
             <a href="#why" className="nav-pill">Why Intime</a>
             <a href="#features" className="nav-pill">Features</a>
             <a href="#how" className="nav-pill">How it works</a>
+            <a href="#demo" className="nav-pill">Live demo</a>
             <a href="#pricing" className="nav-pill">Pricing</a>
             <a href="#cta" className="nav-pill nav-pill--primary">Join waitlist</a>
           </nav>
@@ -148,17 +155,16 @@ export default function Page() {
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="hero-aurora" style={{ transform: `translateY(${offset * -1}px)` }} />
-          <div className="hero-noise" />
         </div>
 
         <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 pb-6 pt-14 md:grid-cols-[1.1fr,0.9fr] md:gap-14 md:pb-14">
-          <div className="reveal">
+          <div>
             <span className="prebadge">
               <span className="dot" /> Early access cohort forming
             </span>
 
-            <h1 className="hero-title">
-              The <span className="txt-gradient txt-gradient--animate">time-aware</span> HR platform
+            <h1 className="hero-title mt-3">
+              The <span className="txt-gradient">time-aware</span> HR platform
               <br /> for teams that move fast.
             </h1>
 
@@ -167,7 +173,7 @@ export default function Page() {
               One source of truth. Fewer tools. Faster ops.
             </p>
 
-            {/* Product preview visual */}
+            {/* Product preview */}
             <div className="relative mt-8 flex justify-center">
               <div className="absolute inset-0 -z-10 mx-auto max-w-4xl rounded-3xl bg-gradient-to-tr from-indigo-50 via-emerald-50 to-transparent blur-2xl opacity-60" />
               <img
@@ -216,17 +222,19 @@ export default function Page() {
                   </select>
                 </div>
 
-                {/* Features of interest */}
+                {/* Features of interest (checkbox group for easier UX) */}
                 <div className="space-y-1">
-                  <label htmlFor="features" className="block text-sm font-medium text-neutral-800">
+                  <span className="block text-sm font-medium text-neutral-800">
                     Which features are you most interested in?
-                  </label>
-                  <select id="features" name="features" multiple className="ui-input" size={Math.min(8, FEATURE_OPTIONS.length)}>
-                    {FEATURE_OPTIONS.map((f) => (
-                      <option key={f} value={f}>{f}</option>
+                  </span>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {FEATURE_OPTIONS.map((label) => (
+                      <label key={label} className="flex items-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm">
+                        <input type="checkbox" name="features" value={label} className="h-4 w-4" />
+                        <span>{label}</span>
+                      </label>
                     ))}
-                  </select>
-                  <p className="text-xs text-neutral-500">Tip: hold ⌘ (Mac) / Ctrl (Windows) to select multiple.</p>
+                  </div>
                 </div>
 
                 {/* Hidden tracking */}
@@ -252,8 +260,8 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Spec card */}
-          <div id="specs" className="glass-card reveal" style={{ transform: `translateY(${offset * 0.3}px)` }}>
+          {/* Spec card (uses .card you already have) */}
+          <aside className="card p-6 md:p-7" style={{ transform: `translateY(${offset * 0.3}px)` }}>
             <ul className="space-y-4 text-sm text-neutral-900">
               {[
                 "Shared time context across ATS, HRIS, payroll, and calendars.",
@@ -267,7 +275,7 @@ export default function Page() {
                 </li>
               ))}
             </ul>
-          </div>
+          </aside>
         </div>
       </section>
 
@@ -299,7 +307,7 @@ export default function Page() {
 
       {/* FEATURES */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-14">
-        <div className="mb-6 reveal">
+        <div className="mb-6">
           <h2 className="section-title">What you can expect</h2>
           <p className="text-sm text-neutral-600">
             A unified layer for HR & recruiting ops — built on time intelligence.
@@ -312,7 +320,7 @@ export default function Page() {
             { t: "Onboarding", b: ["Access + equipment requests", "Policy checks (MFA, SOC, HIPAA)", "Day-1 schedules"] },
             { t: "People Ops", b: ["Org & role management", "Comp band references", "Reviews, goals, SLAs"] },
           ].map(({ t, b }) => (
-            <div key={t} className="feature-card reveal">
+            <div key={t} className="feature-card">
               <div className="feature-card__inner">
                 <h3 className="text-sm font-semibold text-neutral-900">{t}</h3>
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-700">
@@ -342,6 +350,17 @@ export default function Page() {
         </div>
       </section>
 
+      {/* 🔴 LIVE AI DEMO */}
+      <section id="demo" className="mx-auto max-w-6xl px-6 py-14">
+        <h2 className="section-title">Try Intime AI</h2>
+        <p className="mt-1 text-sm text-neutral-600">
+          Paste a resume (or use a sample), choose a role, and get an instant match score with strengths and gaps.
+        </p>
+        <div className="mt-6">
+          <AiResumeMatch />
+        </div>
+      </section>
+
       {/* TESTIMONIALS */}
       <section id="testimonials" className="mx-auto max-w-5xl bg-neutral-50 px-6 py-14 text-center">
         <h2 className="text-2xl font-semibold">What people are saying</h2>
@@ -359,7 +378,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* PRICING (Early Access) */}
+      {/* PRICING */}
       <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
         <div className="mb-10 text-center">
           <h2 className="section-title text-3xl font-semibold">Early Access Pricing</h2>
@@ -459,12 +478,7 @@ export default function Page() {
               onClick={() =>
                 prefillAndFocus({
                   size: "201-1000",
-                  features: [
-                    // Use only options from FEATURE_OPTIONS to stay consistent
-                    "People analytics",
-                    "Compliance & docs",
-                    "Payroll integrations",
-                  ],
+                  features: ["People analytics", "Compliance & docs", "Payroll integrations"],
                 })
               }
               className="ui-btn ui-btn--primary mt-6 w-full"
@@ -493,7 +507,7 @@ export default function Page() {
       <section className="bg-black py-12 text-center text-white">
         <h3 className="text-2xl font-semibold">Ready to work smarter?</h3>
         <p className="mt-2 text-neutral-300">Join the early access list — free for our first 50 companies.</p>
-        <a href="#cta" className="ui-btn ui-btn--light mt-4">Join Waitlist</a>
+        <a href="#cta" className="ui-btn ui-btn--primary mt-4">Join Waitlist</a>
       </section>
 
       {/* Footer */}
