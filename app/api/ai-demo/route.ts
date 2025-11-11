@@ -2,10 +2,9 @@
 import { NextResponse } from "next/server";
 import { scoreJDandCandidate } from "@/lib/matchkeywords";
 
-// Literal assertions so Next 16's RouteHandlerConfig matches
-export const runtime = "nodejs" as const;
-export const dynamic = "force-dynamic" as const;
-// export const preferredRegion = ["iad1"] as const; // optional
+// Keep runtime/dynamic as plain strings for Turbopack
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
