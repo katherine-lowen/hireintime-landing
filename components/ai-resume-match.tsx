@@ -4,7 +4,7 @@ import * as React from "react";
 
 /** Shape returned by /lib/matchkeywords.ts */
 type ApiResult = {
-  overallScore: number;                     // 0–100
+  overallScore: number; // 0–100
   verdict: "Strong match" | "Partial match" | "Weak match" | string;
   summary: string;
 
@@ -35,22 +35,41 @@ function scoreColor(score: number) {
   return "text-rose-600";
 }
 
+/** Strip boilerplate prefixes the extractor can surface so chips read clean */
+function cleanTagLabel(s: string) {
+  return s
+    .replace(/\bjob description:\s*/gi, "")
+    .replace(/\blocation:\s*/gi, "")
+    .replace(/\bdepartment:\s*/gi, "")
+    .replace(/\breports to:\s*/gi, "")
+    .replace(/\bwe('re| are)\s*/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Compact, expandable chip grid */
 function ChipList({
   title,
   items,
   tone,
+  max = 8,
 }: {
   title: string;
   items: string[];
   tone: "good" | "warn";
+  max?: number;
 }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const visible = expanded ? items : items.slice(0, max);
+  const hidden = Math.max(0, items.length - visible.length);
+
   return (
     <div
       className={clsx(
-        "rounded-xl border p-3",
+        "h-full rounded-2xl border p-4",
         tone === "good"
-          ? "border-emerald-200/60 bg-emerald-50/50"
-          : "border-amber-200/60 bg-amber-50/50"
+          ? "border-emerald-200/60 bg-emerald-50/40"
+          : "border-amber-200/60 bg-amber-50/40"
       )}
     >
       <div
@@ -61,18 +80,31 @@ function ChipList({
       >
         {title}
       </div>
-      <div className="mt-1 flex flex-wrap gap-1.5">
-        {items && items.length ? (
-          items.map((t, i) => (
+
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {visible && visible.length ? (
+          visible.map((t, i) => (
             <span
               key={`${t}-${i}`}
-              className="rounded-full bg-white px-2 py-0.5 text-[11px] text-neutral-800 ring-1 ring-neutral-200"
+              title={cleanTagLabel(t)}
+              className="max-w-[220px] truncate rounded-full bg-white px-2.5 py-1 text-[12px] text-neutral-800 shadow-sm ring-1 ring-neutral-200"
             >
-              {t}
+              {cleanTagLabel(t)}
             </span>
           ))
         ) : (
           <span className="text-xs text-neutral-500">—</span>
+        )}
+
+        {hidden > 0 && !expanded && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="rounded-full bg-white px-2.5 py-1 text-[12px] text-neutral-700 ring-1 ring-neutral-300 hover:bg-neutral-50"
+            title="Show all"
+          >
+            +{hidden} more
+          </button>
         )}
       </div>
     </div>
@@ -103,7 +135,6 @@ export default function AiResumeMatch() {
       const json = raw ? JSON.parse(raw) : {};
       if (!res.ok) throw new Error(json?.error || `Request failed (${res.status})`);
 
-      // Map API → UI
       const safe: ApiResult = {
         overallScore: Number(json.overallScore ?? 0),
         verdict: String(json.verdict ?? "Partial match"),
@@ -293,7 +324,7 @@ export default function AiResumeMatch() {
                   <div className="mt-1">
                     <Score value={result.overallScore} verdict={result.verdict} />
                   </div>
-                  <div className="mt-2 text-sm text-neutral-700">{result.summary}</div>
+                  <div className="mt-2 text-[13px] leading-5 text-neutral-700">{result.summary}</div>
                 </div>
                 <div className="rounded-md border bg-neutral-50 p-3 text-xs text-neutral-600">
                   Weights: Must {Math.round(WEIGHTS.must * 100)}% • Nice {Math.round(WEIGHTS.nice * 100)}% • General {Math.round(WEIGHTS.general * 100)}%
@@ -322,7 +353,7 @@ export default function AiResumeMatch() {
                 <ChipList title="General missing" items={result.generalMissing} tone="warn" />
               </div>
 
-              <div className="rounded-xl border bg-neutral-50 p-3">
+              <div className="rounded-2xl border bg-neutral-50 p-4">
                 <div className="text-xs uppercase tracking-wide text-neutral-500">Recommendation</div>
                 <div className="mt-1 text-sm font-medium text-neutral-900">
                   {result.verdict === "Strong match"
