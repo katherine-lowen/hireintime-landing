@@ -3,6 +3,26 @@ import { useEffect, useState } from "react";
 
 const ENDPOINT = "/api/waitlist";
 
+type CompanySize = "1-10" | "11-50" | "51-200" | "201-1000" | "1000+";
+type HeardAbout =
+  | "LinkedIn"
+  | "Product Hunt"
+  | "YC"
+  | "Friend/Colleague"
+  | "Search"
+  | "Other";
+
+const FEATURE_OPTIONS = [
+  "ATS & hiring pipeline",
+  "AI resume parsing & ranking",
+  "Scheduling & time tracking",
+  "Payroll integrations",
+  "Org chart & directory",
+  "Performance & reviews",
+  "People analytics",
+  "Compliance & docs",
+] as const;
+
 export default function Page() {
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [mounted, setMounted] = useState(false);
@@ -32,26 +52,30 @@ export default function Page() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("loading");
-    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
+    const fd = new FormData(e.currentTarget);
+
+    // Build payload so `features` is an array
+    const dataObj: Record<string, any> = Object.fromEntries(fd.entries());
+    dataObj.features = fd.getAll("features"); // string[]
 
     try {
       const res = await fetch(ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(dataObj),
       });
       if (!res.ok) throw new Error();
 
       setStatus("ok");
       (e.currentTarget as HTMLFormElement).reset();
 
-      // Transactional email
+      // Transactional email (still just name/email unless you update /api/notify)
       fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: (data as any).email,
-          name: (data as any).name,
+          email: (dataObj as any).email,
+          name: (dataObj as any).name,
         }),
       }).catch(() => {});
 
@@ -110,10 +134,104 @@ export default function Page() {
             {/* Waitlist form */}
             <div id="cta" className="mt-7 max-w-md">
               <form onSubmit={handleSubmit} className="space-y-3">
-                <input name="email" type="email" required placeholder="you@company.com" className="ui-input" />
+                {/* Email (required) */}
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="you@company.com"
+                  className="ui-input"
+                />
+
+                {/* Name + Company (both required now) */}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <input name="name" type="text" placeholder="Your name" className="ui-input" />
-                  <input name="company" type="text" placeholder="Company (optional)" className="ui-input" />
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    placeholder="Your name"
+                    className="ui-input"
+                  />
+                  <input
+                    name="company"
+                    type="text"
+                    required
+                    placeholder="Company"
+                    className="ui-input"
+                  />
+                </div>
+
+                {/* Company size (required radios) */}
+                <fieldset className="space-y-2">
+                  <label className="block text-sm font-medium text-neutral-800">
+                    How big is your company?
+                  </label>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {(["1-10","11-50","51-200","201-1000","1000+"] as CompanySize[]).map((size) => (
+                      <label
+                        key={size}
+                        className="flex items-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                      >
+                        <input
+                          type="radio"
+                          name="companySize"
+                          value={size}
+                          required
+                          className="h-4 w-4"
+                        />
+                        <span>{size}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+
+                {/* Heard about us (required select) */}
+                <div className="space-y-1">
+                  <label htmlFor="heardAbout" className="block text-sm font-medium text-neutral-800">
+                    How did you find out about us?
+                  </label>
+                  <select
+                    id="heardAbout"
+                    name="heardAbout"
+                    required
+                    defaultValue=""
+                    className="ui-input"
+                  >
+                    <option value="" disabled>
+                      Select one
+                    </option>
+                    {(["LinkedIn","Product Hunt","YC","Friend/Colleague","Search","Other"] as HeardAbout[]).map(
+                      (opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+
+                {/* Features (multi-select) */}
+                <div className="space-y-1">
+                  <label htmlFor="features" className="block text-sm font-medium text-neutral-800">
+                    Which features are you most interested in?
+                  </label>
+                  <select
+                    id="features"
+                    name="features"
+                    multiple
+                    className="ui-input"
+                    // show a few rows; user can Cmd/Ctrl+click for multi
+                    size={Math.min(8, FEATURE_OPTIONS.length)}
+                  >
+                    {FEATURE_OPTIONS.map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-neutral-500">
+                    Tip: hold ⌘ (Mac) / Ctrl (Windows) to select multiple.
+                  </p>
                 </div>
 
                 {/* Hidden fields */}
