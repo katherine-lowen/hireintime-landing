@@ -555,49 +555,49 @@ export default function Page() {
         </div>
       </section>
 
-      {/* PRICING */}
+          {/* PRICING */}
       <section
         id="pricing"
         className="mx-auto max-w-6xl px-6 py-20"
       >
-        <div className="mb-10 text-center">
+        <div className="mb-8 text-center">
           <h2 className="section-title text-3xl font-semibold">
-            Early Access Pricing
+            Pricing that scales with your team
           </h2>
           <p className="mt-3 text-neutral-700">
-            The first <strong>50 companies</strong> that join our
-            waitlist receive <strong>3 months completely free</strong>{" "}
-            during beta.
+            Platform-first pricing: a flat base fee plus a per-employee-per-month (PEPM) add-on.
           </p>
           <p className="mt-1 text-sm text-neutral-500">
-            After beta, you’ll lock in discounted lifetime pricing for
-            as long as you stay subscribed.
+            First <strong>50 companies</strong> get <strong>3 months free</strong> during early access.
           </p>
+
+          {/* AI Studio highlight */}
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 text-slate-50 px-4 py-1.5 text-[11px] shadow-sm">
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="font-medium">
+              Intime AI Studio is included on all paid plans —{" "}
+              <span className="text-emerald-300">fully unlocked on Growth & Scale</span>.
+            </span>
+          </div>
         </div>
 
         <div className="grid gap-8 md:grid-cols-3">
-          {/* Founding Batch */}
-          <div className="relative rounded-2xl border-2 border-black bg-white p-8 shadow-sm">
-            <span className="absolute -top-3 left-6 rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
-              Early Access • Free for first 50
-            </span>
-            <h3 className="mt-3 text-xl font-semibold">
-              Founding Batch
-            </h3>
-            <p className="mt-2 text-2xl font-semibold">
-              Free for 3 months
-            </p>
-            <p className="mt-1 text-sm text-neutral-500">
-              Then $149/mo after beta
-            </p>
+
+          {/* STARTER */}
+          <div className="rounded-2xl border bg-white p-8 shadow-sm">
+            <h3 className="text-xl font-semibold">Starter</h3>
+            <p className="mt-1 text-sm text-neutral-600">For teams up to ~15–20 employees</p>
+
+            <p className="mt-4 text-2xl font-semibold">$79/mo</p>
+            <p className="text-sm text-neutral-600">Base platform fee</p>
+            <p className="text-sm text-neutral-800 mt-1">+ <strong>$6</strong> per employee / month</p>
 
             <ul className="mt-5 space-y-2 text-sm text-neutral-700">
-              <li>✔ Full platform (ATS + HRIS + time intelligence)</li>
-              <li>✔ Unlimited jobs & candidates</li>
-              <li>✔ Basic automations & scheduling</li>
-              <li>✔ AI resume parsing + ranking</li>
-              <li>✔ Slack / Teams integration</li>
-              <li>✔ Email support during beta</li>
+              <li>✔ Applicant Tracking (ATS)</li>
+              <li>✔ Basic People Directory</li>
+              <li>✔ Time Off + Calendar</li>
+              <li>✔ Onboarding checklists</li>
+              <li>✔ Basic AI features (screening, summaries)</li>
             </ul>
 
             <button
@@ -607,68 +607,75 @@ export default function Page() {
                   size: "11-50",
                   features: [
                     "ATS & hiring pipeline",
-                    "AI resume parsing & ranking",
                     "Scheduling & time tracking",
                   ],
                 })
               }
               className="ui-btn ui-btn--primary mt-6 w-full"
             >
-              Join free beta
+              I’m a Starter team
             </button>
           </div>
 
-          {/* Growth */}
-          <div className="rounded-2xl border bg-white p-8 shadow-sm">
-            <h3 className="text-xl font-semibold">Growth</h3>
-            <p className="mt-2 text-2xl font-semibold">$249–$299/mo</p>
-            <p className="mt-1 text-sm text-neutral-500">
-              Up to ~50 employees
-            </p>
+          {/* GROWTH */}
+          <div className="relative rounded-2xl border-2 border-black bg-white p-8 shadow-sm">
+            <span className="absolute -top-3 left-6 rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+              Most popular • Full AI Studio
+            </span>
+
+            <h3 className="mt-4 text-xl font-semibold">Growth</h3>
+            <p className="mt-1 text-sm text-neutral-600">Best for 20–150 employee companies</p>
+
+            <p className="mt-4 text-2xl font-semibold">$199/mo</p>
+            <p className="text-sm text-neutral-600">Base platform fee</p>
+            <p className="text-sm text-neutral-800 mt-1">+ <strong>$10</strong> per employee / month</p>
 
             <ul className="mt-5 space-y-2 text-sm text-neutral-700">
-              <li>✔ Everything in Founding Batch</li>
-              <li>✔ Org chart & role management</li>
-              <li>✔ Performance reviews & goals</li>
-              <li>✔ Advanced reporting dashboard</li>
-              <li>✔ API access + webhooks</li>
-              <li>✔ Standard support (email & chat)</li>
+              <li>✔ Everything in Starter</li>
+              <li>✔ Team org chart</li>
+              <li>✔ Custom PTO policies</li>
+              <li>✔ Advanced AI matching & scoring</li>
+              <li>✔ Full AI Studio access</li>
+              <li>✔ Templates (offers, onboarding, reviews)</li>
+              <li>✔ Roles & permissions</li>
+              <li>✔ Gmail / Outlook / Slack integrations</li>
             </ul>
 
             <button
               type="button"
               onClick={() =>
                 prefillAndFocus({
-                  size: "11-50",
+                  size: "51-200",
                   features: [
                     "Org chart & directory",
                     "Performance & reviews",
                     "People analytics",
-                    "ATS & hiring pipeline",
                   ],
                 })
               }
               className="ui-btn ui-btn--primary mt-6 w-full"
             >
-              Reserve early access
+              I’m a Growth team
             </button>
           </div>
 
-          {/* Scale */}
+          {/* SCALE */}
           <div className="rounded-2xl border bg-white p-8 shadow-sm">
             <h3 className="text-xl font-semibold">Scale</h3>
-            <p className="mt-2 text-2xl font-semibold">$499–$799/mo</p>
-            <p className="mt-1 text-sm text-neutral-500">
-              Up to ~200 employees
-            </p>
+            <p className="mt-1 text-sm text-neutral-600">For full HRIS needs + SSO</p>
+
+            <p className="mt-4 text-2xl font-semibold">$399/mo</p>
+            <p className="text-sm text-neutral-600">Base platform fee</p>
+            <p className="text-sm text-neutral-800 mt-1">+ <strong>$14</strong> per employee / month</p>
 
             <ul className="mt-5 space-y-2 text-sm text-neutral-700">
               <li>✔ Everything in Growth</li>
-              <li>✔ Advanced automations & workflow builder</li>
-              <li>✔ Custom role permissions & audit logs</li>
-              <li>✔ Payroll + compliance integrations</li>
-              <li>✔ Dedicated success manager</li>
-              <li>✔ Priority onboarding & SLA support</li>
+              <li>✔ Performance reviews</li>
+              <li>✔ Compensation planning</li>
+              <li>✔ Advanced analytics</li>
+              <li>✔ API access</li>
+              <li>✔ Early Payroll integration</li>
+              <li>✔ SSO (Google / Azure AD)</li>
             </ul>
 
             <button
@@ -678,27 +685,23 @@ export default function Page() {
                   size: "201-1000",
                   features: [
                     "People analytics",
-                    "Compliance & docs",
                     "Payroll integrations",
+                    "Performance & reviews",
                   ],
                 })
               }
               className="ui-btn ui-btn--primary mt-6 w-full"
             >
-              Talk to us
+              I’m a Scale team
             </button>
           </div>
         </div>
 
         <div className="mt-10 text-center text-sm text-neutral-600">
           Need enterprise features or &gt;200 employees?{" "}
-          <a
-            className="underline"
-            href="mailto:hello@hireintime.ai"
-          >
+          <a className="underline" href="mailto:hello@hireintime.ai">
             Contact us
           </a>
-          .
         </div>
 
         <div className="mt-10 text-center">
@@ -706,20 +709,6 @@ export default function Page() {
             Join the Early Access Waitlist
           </a>
         </div>
-      </section>
-
-      {/* Bottom CTA */}
-      <section className="bg-black py-12 text-center text-white">
-        <h3 className="text-2xl font-semibold">
-          Ready to work smarter?
-        </h3>
-        <p className="mt-2 text-neutral-300">
-          Join the early access list — free for our first 50
-          companies.
-        </p>
-        <a href="#cta" className="ui-btn ui-btn--primary mt-4">
-          Join Waitlist
-        </a>
       </section>
 
       {/* Footer */}
