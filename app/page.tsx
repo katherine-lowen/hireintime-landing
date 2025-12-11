@@ -1,25 +1,27 @@
-// app/page.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { DashboardMockup } from "../components/DashboardMockup";
 import { ChevronDown, Check } from "lucide-react";
 
-// Client-only AI demo (JD ↔ Candidate Fit)
 const AiResumeMatch = dynamic(
   () => import("../components/ai-resume-match"),
   { ssr: false }
 );
 
-// Base URL of the app (SaaS dashboard)
+const CommentsDemo = dynamic(
+  () => import("../components/CommentsDemo"),
+  { ssr: false }
+);
+
 const APP_BASE_URL =
   process.env.NEXT_PUBLIC_APP_BASE_URL ?? "http://localhost:3000";
 
 const LOGIN_URL = `${APP_BASE_URL}/login`;
 const SIGNUP_URL = `${APP_BASE_URL}/signup`;
 
-// Types for form controls
 type CompanySize = "1-10" | "11-50" | "51-200" | "201-1000" | "1000+";
 type HeardAbout =
   | "LinkedIn"
@@ -50,6 +52,365 @@ const COMPANY_SIZES: CompanySize[] = [
 
 const ENDPOINT = "/api/waitlist";
 
+/**
+ * Interactive: Time Savings Calculator
+ */
+function TimeSavingsCalculator() {
+  const [headcount, setHeadcount] = useState(40);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([
+    "hiringReports",
+    "peopleDashboards",
+  ]);
+
+  const TASKS: { key: string; label: string; hours: number }[] = [
+    {
+      key: "hiringReports",
+      label: "Weekly hiring / pipeline updates",
+      hours: 1.5,
+    },
+    {
+      key: "peopleDashboards",
+      label: "Headcount / PTO / org spreadsheets",
+      hours: 2,
+    },
+    {
+      key: "reviewStatus",
+      label: "Chasing review completion & status",
+      hours: 1.25,
+    },
+    {
+      key: "adHocQuestions",
+      label: "“Quick” ad-hoc people data questions",
+      hours: 1.5,
+    },
+  ];
+
+  // Very simple model: base overhead + task overhead
+  const baseHours = Math.max(2, headcount * 0.08); // scale slightly w/ headcount
+  const tasksHours = selectedTasks.reduce((sum, key) => {
+    const task = TASKS.find((t) => t.key === key);
+    return sum + (task?.hours ?? 0);
+  }, 0);
+
+  const totalHours = Math.round((baseHours + tasksHours) * 10) / 10;
+  const blendedRate = 65; // $/hr assumption
+  const monthlyCost = Math.round(totalHours * blendedRate * 4); // weeks per month
+
+  function toggleTask(key: string) {
+    setSelectedTasks((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  }
+
+  return (
+    <section className="mx-auto max-w-6xl px-5 pb-16 md:px-6 lg:pb-20">
+      <div className="grid gap-8 rounded-3xl border border-blue-100 bg-white/90 p-6 shadow-xl shadow-blue-100 md:grid-cols-[1.1fr,0.9fr] md:p-10">
+        <div className="space-y-4">
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+            Time saved with Intime
+          </p>
+          <h2 className="text-3xl font-semibold text-[#0f172a]">
+            See how many hours of HR reporting you&apos;re burning every week.
+          </h2>
+          <p className="text-sm text-neutral-700">
+            Plug in your headcount, pick the things you&apos;re doing in Excel and
+            slide decks, and see how much Intime can give back to your week.
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between text-xs text-neutral-600">
+                <span>Team size</span>
+                <span className="font-medium text-neutral-800">
+                  {headcount} employees
+                </span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={200}
+                value={headcount}
+                onChange={(e) => setHeadcount(Number(e.target.value))}
+                className="mt-2 w-full accent-[#2563eb]"
+              />
+              <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
+                <span>5</span>
+                <span>50</span>
+                <span>100</span>
+                <span>200</span>
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium text-neutral-700">
+                What are you maintaining manually today?
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {TASKS.map((task) => {
+                  const selected = selectedTasks.includes(task.key);
+                  return (
+                    <button
+                      key={task.key}
+                      type="button"
+                      onClick={() => toggleTask(task.key)}
+                      className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left text-xs transition ${
+                        selected
+                          ? "border-blue-500 bg-blue-500 text-white shadow-md shadow-blue-200"
+                          : "border-slate-200 bg-slate-50 text-neutral-800 hover:border-blue-200 hover:bg-blue-50"
+                      }`}
+                    >
+                      <span className="flex-1 leading-snug">{task.label}</span>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${
+                          selected
+                            ? "bg-white/10 text-white"
+                            : "bg-white text-neutral-600"
+                        }`}
+                      >
+                        ~{task.hours} hrs/wk
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-between rounded-2xl bg-gradient-to-br from-[#eff4ff] via-white to-[#e7edff] p-5 shadow-inner shadow-blue-100">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+              Your weekly impact
+            </p>
+            <div className="flex items-end gap-3">
+              <div>
+                <div className="text-sm text-neutral-600">Estimated hours saved</div>
+                <div className="text-4xl font-semibold text-[#0f172a]">
+                  {totalHours.toFixed(1)}
+                  <span className="ml-1 text-base font-medium text-neutral-500">
+                    hrs / wk
+                  </span>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-600">
+              That&apos;s time you&apos;re currently spending exporting data, cleaning rows
+              in Excel, formatting slides, and answering &quot;quick&quot; people data
+              questions.
+            </p>
+            <div className="mt-2 rounded-2xl border border-blue-200 bg-white/80 p-4 text-sm shadow-sm shadow-blue-100">
+              <div className="flex items-center justify-between text-xs text-neutral-600">
+                <span>Approx. monthly cost of that time</span>
+                <span className="font-semibold text-[#0f172a]">
+                  ${monthlyCost.toLocaleString()}
+                </span>
+              </div>
+              <p className="mt-2 text-[11px] text-neutral-500">
+                Assumes a blended fully-loaded rate of ${blendedRate}/hr. Intime
+                is built to make this reporting work a byproduct of how your team
+                already operates.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 text-right text-[11px] text-neutral-500">
+            This is an illustrative calculator, not a guarantee — but most teams
+            see 5–10 hours per week back after moving off spreadsheets.
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Interactive: Reports Tabs
+ */
+function ReportsTabs() {
+  type TabKey = "headcount" | "hiring" | "pto" | "reviews";
+  const [active, setActive] = useState<TabKey>("headcount");
+
+  const TABS: {
+    key: TabKey;
+    label: string;
+    description: string;
+    bullets: string[];
+  }[] = [
+    {
+      key: "headcount",
+      label: "Headcount",
+      description:
+        "See headcount by team, manager, location, and start date on one live timeline.",
+      bullets: [
+        "Drill into teams and reporting lines instantly",
+        "Track starts, exits, and transfers with context",
+        "Export if you want — but you usually won’t",
+      ],
+    },
+    {
+      key: "hiring",
+      label: "Hiring funnel",
+      description:
+        "Track time-to-fill, stage conversion, and offer acceptance without rebuilding spreadsheets.",
+      bullets: [
+        "Time-to-fill by hiring manager and job",
+        "Stage conversion over any date range",
+        "Offer acceptance and decline reasons",
+      ],
+    },
+    {
+      key: "pto",
+      label: "PTO",
+      description:
+        "Understand planned vs. used time off, coverage issues, and policy usage at a glance.",
+      bullets: [
+        "PTO balance and usage by team",
+        "Coverage risk by week or month",
+        "Policy-level insights (unlimited, accrued, etc.)",
+      ],
+    },
+    {
+      key: "reviews",
+      label: "Reviews",
+      description:
+        "Monitor completion rates, calibration, and promotion signals without chasing spreadsheets.",
+      bullets: [
+        "Completion by org, manager, and cycle",
+        "Calibration views tied to compensation",
+        "Promotion and risk signals in one place",
+      ],
+    },
+  ];
+
+  const activeTab = TABS.find((t) => t.key === active)!;
+
+  return (
+    <section className="mx-auto max-w-6xl px-5 py-16 md:px-6 lg:py-20">
+      <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+            Reporting views
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold text-[#0f172a]">
+            Switch between the views leaders ask for every week.
+          </h2>
+          <p className="mt-2 text-sm text-neutral-600">
+            Instead of rebuilding the same Excel file, Intime gives you live
+            headcount, hiring, PTO, and review reporting — with one click.
+          </p>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 md:mt-0">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActive(tab.key)}
+              className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+                active === tab.key
+                  ? "border-blue-500 bg-blue-500 text-white shadow-sm shadow-blue-200"
+                  : "border-slate-200 bg-white text-neutral-700 hover:border-blue-200 hover:bg-blue-50"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-[1.1fr,0.9fr]">
+        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-[#f3f7ff] via-white to-[#eef5ff] p-6 shadow-lg shadow-blue-100">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+                {activeTab.label} overview
+              </p>
+              <p className="mt-1 text-sm text-neutral-700">
+                {activeTab.description}
+              </p>
+            </div>
+            <span className="rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-blue-800 shadow-sm">
+              Always live — no exports
+            </span>
+          </div>
+          <ul className="space-y-2 text-sm text-neutral-700">
+            {activeTab.bullets.map((bullet) => (
+              <li key={bullet} className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                <span>{bullet}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-md shadow-blue-100">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+            Example metrics
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {active === "headcount" && (
+              <>
+                <MetricCard label="Total headcount" value="42" hint="as of today" />
+                <MetricCard label="Teams" value="7" hint="Eng, GTM, Ops..." />
+                <MetricCard label="New hires (last 30 days)" value="6" />
+                <MetricCard label="Exits (last 30 days)" value="1" />
+              </>
+            )}
+            {active === "hiring" && (
+              <>
+                <MetricCard
+                  label="Avg. time-to-fill"
+                  value="32 days"
+                  hint="down 9 days vs. last quarter"
+                />
+                <MetricCard label="Open roles" value="9" />
+                <MetricCard label="Offer accept rate" value="86%" />
+                <MetricCard label="Pipeline by stage" value="View in Intime" />
+              </>
+            )}
+            {active === "pto" && (
+              <>
+                <MetricCard label="Upcoming PTO (30 days)" value="64 days" />
+                <MetricCard label="Teams at risk" value="2" hint="coverage flags" />
+                <MetricCard label="Avg. days taken / FTE" value="9.4" />
+                <MetricCard label="Policy usage" value="Healthy" hint="in line with target" />
+              </>
+            )}
+            {active === "reviews" && (
+              <>
+                <MetricCard label="Current cycle completion" value="78%" hint="in progress" />
+                <MetricCard label="Managers overdue" value="3" />
+                <MetricCard label="Promotions proposed" value="7" />
+                <MetricCard label="Calibration sessions" value="2 scheduled" />
+              </>
+            )}
+          </div>
+          <p className="mt-4 text-[11px] text-neutral-500">
+            In the product, these views are fully filterable by team, manager,
+            location, and time range — with export and share links for leadership.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3 text-xs shadow-inner shadow-slate-100">
+      <p className="text-[11px] text-neutral-600">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-[#0f172a]">{value}</p>
+      {hint && <p className="mt-0.5 text-[10px] text-neutral-500">{hint}</p>}
+    </div>
+  );
+}
+
 export default function Page() {
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">(
     "idle"
@@ -58,7 +419,6 @@ export default function Page() {
   const [offset, setOffset] = useState(0);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  // local UI state for pills / feature cards
   const [formState, setFormState] = useState<{
     companySize: CompanySize | "";
     features: string[];
@@ -69,10 +429,9 @@ export default function Page() {
 
   useEffect(() => {
     setMounted(true);
-    const onScroll = () => setOffset(window.scrollY * 0.15);
+    const onScroll = () => setOffset(window.scrollY * 0.12);
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    // Prefill tracking inputs
     const params = new URLSearchParams(window.location.search);
     const setHidden = (name: string, value: string) => {
       const el = document.querySelector(
@@ -106,7 +465,6 @@ export default function Page() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    // simple validation for the new pill UI
     if (!formState.companySize) {
       alert("Please select your company size.");
       return;
@@ -145,7 +503,6 @@ export default function Page() {
       form.reset();
       setFormState({ companySize: "", features: [] });
 
-      // Fire-and-forget notify
       fetch("/api/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,146 +532,316 @@ export default function Page() {
       ?.focus();
   }
 
+  const statItems = [
+    {
+      label: "per week saved on HR reporting & updates",
+      value: "5–10 hrs",
+    },
+    {
+      label: "faster time-to-fill from better signal, not more pings",
+      value: "30–40%",
+    },
+    {
+      label: "manual spreadsheets replaced by live dashboards",
+      value: "7+",
+    },
+  ];
+
   return (
-    <main className={`page ${mounted ? "page--in" : ""}`}>
+    <main
+      className={`page ${mounted ? "page--in" : ""} bg-gradient-to-b from-[#f7fbff] via-white to-[#f1f4fb] text-neutral-900`}
+    >
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-[-5%] top-[-10%] h-[360px] w-[360px] rounded-full bg-blue-200/40 blur-[120px]" />
+        <div className="absolute right-[5%] top-[5%] h-[340px] w-[340px] rounded-full bg-indigo-200/30 blur-[120px]" />
+        <div className="absolute inset-x-0 bottom-[-12%] h-[380px] bg-[radial-gradient(circle_at_50%_0%,rgba(148,163,184,0.35),transparent_60%)]" />
+      </div>
+
       {/* HEADER */}
-      <div className="sticky top-0 z-20 border-b border-neutral-200/70 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold tracking-tight text-neutral-900">
+      <header className="sticky top-0 z-30 border-b border-blue-100/80 bg-white/90 backdrop-blur-lg shadow-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-6">
+          <div className="flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1.5 shadow-sm shadow-blue-100/60">
+            <span className="text-base font-semibold tracking-tight text-[#0f172a]">
               Intime
             </span>
-            <span className="text-xs font-medium text-neutral-500">
-              HR Platform
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-700">
+              Next-generation HRIS
             </span>
           </div>
           <nav className="hidden items-center gap-2 md:flex">
-            <a href="#why" className="nav-pill">
-              Why Intime
-            </a>
-            <a href="#features" className="nav-pill">
-              Features
-            </a>
-            <a href="#how" className="nav-pill">
-              How it works
-            </a>
-            <a href="#demo" className="nav-pill">
-              Live demo
-            </a>
-            <a href="#pricing" className="nav-pill">
-              Pricing
-            </a>
-            <a href={LOGIN_URL} className="nav-pill">
+            {[
+              ["Why Intime", "#why"],
+              ["Features", "#features"],
+              ["How it works", "#how"],
+              ["Live demo", "#demo"],
+              ["Pricing", "#pricing"],
+            ].map(([label, href]) => (
+              <a
+                key={href}
+                href={href}
+                className="rounded-full px-3.5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-blue-50 hover:text-[#0f172a]"
+              >
+                {label}
+              </a>
+            ))}
+            <a
+              href={LOGIN_URL}
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-neutral-600 transition hover:bg-blue-50 hover:text-[#0f172a]"
+            >
               Log in
             </a>
-            <a href={SIGNUP_URL} className="nav-pill nav-pill--primary">
+            <a
+              href={SIGNUP_URL}
+              className="inline-flex items-center justify-center rounded-full bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white shadow-md shadow-blue-200/70 transition hover:-translate-y-[1px] hover:bg-[#1d4ed8]"
+            >
               Get started
             </a>
           </nav>
+          <a
+            href="#cta"
+            className="inline-flex items-center gap-2 rounded-full bg-[#2563eb] px-3.5 py-2 text-sm font-semibold text-white shadow-md shadow-blue-200/70 transition hover:-translate-y-[1px] hover:bg-[#1d4ed8] md:hidden"
+          >
+            Join waitlist
+          </a>
         </div>
-      </div>
+      </header>
 
-      {/* HERO – new time-saved header */}
-      <section className="relative overflow-hidden bg-white">
-        {/* Radial gradient background */}
-        <div
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 20%, rgba(59,130,246,0.08), rgba(168,85,247,0.06) 40%, transparent 70%)",
-          }}
-        />
-
-        <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 pb-10 pt-14 md:grid-cols-[1.25fr,0.9fr] md:gap-14 md:pb-16">
-          {/* Left: hero copy + mockup + waitlist */}
-          <div>
-            {/* Top badge */}
-            <div className="mb-6">
-              <div
-                className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-900 shadow-sm"
-                style={{
-                  boxShadow:
-                    "0 0 20px rgba(16, 185, 129, 0.15), 0 1px 3px rgba(0, 0, 0, 0.08)",
-                }}
-              >
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                Early access cohort forming
-              </div>
+      {/* HERO */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_20%,rgba(125,211,252,0.2),transparent_45%),radial-gradient(circle_at_85%_15%,rgba(167,139,250,0.25),transparent_45%)]" />
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 pb-16 pt-12 md:grid-cols-[1.05fr,0.95fr] md:px-6 lg:gap-14 lg:pb-20">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 shadow-sm">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.15)]" />
+              Stop running your HRIS out of Excel
             </div>
-
-            {/* Headline */}
-            <h1 className="text-balance text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl lg:text-6xl">
-              <span className="block mb-1">The time-aware HR platform</span>
-              <span className="block bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-                that saves teams 6–12 hours every week.
-              </span>
-            </h1>
-
-            {/* Subheadline */}
-            <p className="mt-4 max-w-prose text-lg text-neutral-700">
-              Intime automates hiring, onboarding, PTO, performance, and payroll
-              inside a single live timeline — so you always know who&apos;s
-              doing what, when, and what it costs.
-            </p>
-
-            {/* CTAs */}
-            <div className="mt-6 flex flex-wrap gap-3">
-              <a href={SIGNUP_URL} className="ui-btn ui-btn--primary">
+            <div className="space-y-3">
+              <h1 className="text-balance text-4xl font-semibold leading-tight tracking-tight text-[#0f172a] sm:text-5xl lg:text-6xl">
+                The next-grade HRIS for reporting, smart hiring & the full employee lifecycle.
+              </h1>
+              <p className="max-w-2xl text-lg text-neutral-700">
+                Intime replaces spreadsheets, one-off tools, and manual exports with a time-aware,
+                AI-native HR platform. ATS, onboarding, PTO, performance, payroll data — all in one
+                reporting-ready system your team actually uses.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={SIGNUP_URL}
+                className="inline-flex items-center justify-center rounded-full bg-[#2563eb] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200/80 transition hover:-translate-y-[1px] hover:bg-[#1d4ed8]"
+              >
                 Start free in the app
               </a>
-              <a href="#cta" className="ui-btn ui-btn--ghost">
-                Join waitlist
+              <a
+                href="#cta"
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-[1px] hover:border-slate-300 hover:bg-slate-50"
+              >
+                Join early access
               </a>
             </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600">
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 font-semibold text-blue-800">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.18)]" />
+                Save 5–10 hours per week on reporting
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1">
+                No more VLOOKUPs, exports, or “quick” Excel dashboards
+              </span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {statItems.map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-blue-100 bg-white px-4 py-3 shadow-sm shadow-blue-100"
+                >
+                  <div className="text-xl font-semibold text-[#0f172a]">
+                    {value}
+                  </div>
+                  <div className="text-sm text-neutral-600">{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-            {/* Product mockup */}
-            <div className="relative mt-10 flex justify-center md:justify-start">
-              <div
-                className="pointer-events-none absolute inset-0 -z-10 mx-auto max-w-4xl rounded-3xl"
-                style={{
-                  background:
-                    "radial-gradient(circle at 50% 50%, rgba(59,130,246,0.06), rgba(168,85,247,0.05) 50%, transparent 80%)",
-                  transform: "scale(1.02)",
-                  filter: "blur(60px)",
-                }}
-              />
-              <div
-                className="w-full max-w-3xl"
-                style={{ transform: `translateY(${offset * -0.15}px)` }}
-              >
+          <div className="relative">
+            <div
+              className="pointer-events-none absolute inset-0 -z-10 rounded-[28px] bg-gradient-to-br from-blue-100/60 via-white to-indigo-100/50 blur-3xl"
+              style={{ transform: `translateY(${offset * -0.2}px)` }}
+            />
+            <div
+              className="relative mx-auto flex max-w-3xl justify-center rounded-3xl border border-blue-100 bg-white/90 px-4 py-4 shadow-xl shadow-blue-100/60 backdrop-blur"
+              style={{ transform: `translateY(${offset * -0.18}px)` }}
+            >
+              <div className="w-full max-w-3xl">
                 <DashboardMockup />
               </div>
             </div>
+          </div>
+        </div>
+      </section>
 
-            {/* WAITLIST */}
-            <div id="cta" className="mt-14">
-              <div
-                className="mx-auto w-full max-w-2xl rounded-2xl bg-white p-8 sm:p-10"
-                style={{ boxShadow: "0 12px 40px rgba(0, 0, 0, 0.06)" }}
+      {/* BEFORE / AFTER */}
+      <section className="mx-auto max-w-6xl px-5 pb-16 md:px-6 lg:pb-20">
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50/80 p-6 shadow-inner shadow-slate-100">
+            <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-slate-200/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-800">
+              Before Intime
+            </p>
+            <h3 className="mb-3 text-lg font-semibold text-[#0f172a]">
+              HR that lives in spreadsheets.
+            </h3>
+            <ul className="space-y-2 text-sm text-neutral-700">
+              <li>• ATS exports to CSV → Excel → screenshot for leadership.</li>
+              <li>• Headcount in Sheets, PTO in HRIS, org chart in a diagram tool.</li>
+              <li>• Weekly “quick updates” that take half a day to prepare.</li>
+              <li>• No single source of truth for hiring, reviews, or promotions.</li>
+            </ul>
+          </div>
+          <div className="rounded-3xl border border-blue-100 bg-gradient-to-br from-[#e8f1ff] via-white to-[#e4edff] p-6 shadow-lg shadow-blue-100">
+            <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-blue-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">
+              After Intime
+            </p>
+            <h3 className="mb-3 text-lg font-semibold text-[#0f172a]">
+              HR that reports itself.
+            </h3>
+            <ul className="space-y-2 text-sm text-neutral-800">
+              <li>• ATS, onboarding, PTO, reviews, and payroll context on one timeline.</li>
+              <li>• Live hiring funnel, headcount, and PTO reports — no exports.</li>
+              <li>• Managers check Intime instead of pinging you for screenshots.</li>
+              <li>• Time-aware workflows that automatically update reporting as you work.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* TIME SAVINGS CALCULATOR */}
+      <TimeSavingsCalculator />
+
+      {/* WHY */}
+      <section
+        id="why"
+        className="mx-auto max-w-6xl px-5 py-16 md:px-6 lg:py-20"
+      >
+        <div className="grid gap-10 lg:grid-cols-[1.05fr,0.95fr]">
+          <div className="space-y-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+              Why Intime
+            </p>
+            <h2 className="text-3xl font-semibold text-[#0f172a]">
+              Your HRIS shouldn&apos;t live in Excel.
+            </h2>
+            <p className="text-lg text-neutral-700">
+              Right now, HR runs on exports, side spreadsheets, and screenshots from half a dozen tools.
+              Intime is designed to be the reporting layer and operating system in one — from first touch
+              as a candidate to last day as an employee.
+            </p>
+            <ul className="space-y-2 text-sm text-neutral-700">
+              <li className="flex gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                <span>
+                  Smart hiring: ATS + AI matching + structured feedback that writes its own reporting.
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                <span>
+                  Full lifecycle: onboarding tasks, PTO, performance, and payroll context on one live timeline.
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                <span>
+                  Reporting built-in: headcount, funnel, PTO, and review data are always up-to-date —
+                  no manual stitching.
+                </span>
+              </li>
+            </ul>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <a
+                href="#cta"
+                className="rounded-full bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200/80 transition hover:-translate-y-[1px] hover:bg-[#1d4ed8]"
               >
-                <div className="mb-8 text-center">
-                  <h2 className="mb-3 text-2xl font-semibold">
-                    <span className="bg-gradient-to-r from-[#2C6DF9] via-[#6366F1] to-[#A78BFA] bg-clip-text text-transparent">
-                      Join the Intime
-                    </span>{" "}
-                    <span className="text-gray-900">Waitlist</span>
-                  </h2>
-                  <p className="text-sm text-neutral-600">
-                    Be first to try our unified HR platform — one connected
-                    system for people, time, and performance.
-                  </p>
+                Join the waitlist
+              </a>
+              <a
+                href="#features"
+                className="rounded-full border border-blue-100 bg-white px-4 py-2.5 text-sm font-semibold text-[#0f172a] shadow-sm transition hover:-translate-y-[1px] hover:border-blue-200 hover:bg-blue-50"
+              >
+                Explore the platform
+              </a>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {statItems.map(({ label, value }) => (
+              <div
+                key={label}
+                className="rounded-2xl border border-blue-100 bg-white px-4 py-4 text-center shadow-sm shadow-blue-100/70"
+              >
+                <div className="text-2xl font-semibold text-[#0f172a]">
+                  {value}
                 </div>
+                <div className="mt-1 text-sm text-neutral-600">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-                <form
-                  ref={formRef}
-                  onSubmit={handleSubmit}
-                  className="space-y-8"
-                >
-                  {/* Email Input */}
-                  <div>
+      {/* WAITLIST */}
+      <section
+        id="cta"
+        className="mx-auto max-w-6xl px-5 pb-20 md:px-6 lg:pb-20"
+      >
+        <div className="grid gap-10 rounded-3xl border border-blue-100 bg-gradient-to-r from-white via-[#f7fbff] to-[#eef3ff] p-6 shadow-xl shadow-blue-100 md:grid-cols-[1.1fr,0.9fr] md:p-10">
+          <div className="space-y-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+              HR built for operators, not Excel wizards
+            </p>
+            <h2 className="text-3xl font-semibold text-[#0f172a]">
+              Join the Intime early access cohort
+            </h2>
+            <p className="text-base text-neutral-700">
+              Be first to use an HRIS that understands time, hiring funnels, and people data —
+              so your team stops burning hours on reports and status pings.
+            </p>
+            <ul className="space-y-2 text-sm text-neutral-700">
+              {[
+                "5–10 hours per week back from automated HR reports & status updates",
+                "Smart hiring views that connect job, candidate, and compensation data instantly",
+                "Lifecycle analytics from first interview to last performance review — no spreadsheets required",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-blue-500" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-neutral-500">
+              You&apos;ll never be copy/pasting HR data into Excel again — unless you really want to.
+            </p>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 rounded-2xl bg-white/70 blur-2xl" />
+            <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-white p-6 shadow-lg shadow-blue-100/80">
+              <div className="mb-6 text-center">
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
+                  Early access
+                </span>
+                <h3 className="mt-3 text-xl font-semibold text-[#0f172a]">
+                  Tell us about your team
+                </h3>
+                <p className="mt-1 text-sm text-neutral-600">
+                  We&apos;ll align features and onboarding to your size and reporting needs.
+                </p>
+              </div>
+
+              <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
                     <label
                       htmlFor="email"
-                      className="block text-gray-700 mb-2.5 text-sm font-medium"
+                      className="mb-2 block text-sm font-medium text-neutral-800"
                     >
                       Work email
                     </label>
@@ -324,338 +851,256 @@ export default function Page() {
                       type="email"
                       placeholder="you@company.com"
                       required
-                      className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2C6DF9] focus:border-transparent text-sm"
-                      style={{
-                        boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.03)",
-                      }}
+                      className="h-12 w-full rounded-xl border border-blue-100 bg-white px-4 text-sm text-[#0f172a] placeholder:text-neutral-400 shadow-inner shadow-blue-100 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-200"
                     />
                   </div>
-
-                  {/* Name and Company Row */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label
-                        htmlFor="name"
-                        className="block text-gray-700 mb-2.5 text-sm font-medium"
-                      >
-                        Your name
-                      </label>
-                      <input
-                        id="name"
-                        name="name"
-                        type="text"
-                        placeholder="Jane Smith"
-                        required
-                        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2C6DF9] focus:border-transparent text-sm"
-                        style={{
-                          boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.03)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="company"
-                        className="block text-gray-700 mb-2.5 text-sm font-medium"
-                      >
-                        Company
-                      </label>
-                      <input
-                        id="company"
-                        name="company"
-                        type="text"
-                        placeholder="Acme Inc."
-                        required
-                        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2C6DF9] focus:border-transparent text-sm"
-                        style={{
-                          boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.03)",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Company Size Pills */}
-                  <div>
-                    <label className="block text-gray-700 mb-3.5 text-sm font-medium">
-                      How big is your company?
-                    </label>
-                    <div className="flex flex-wrap gap-2.5">
-                      {COMPANY_SIZES.map((size) => (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => handleCompanySizeSelect(size)}
-                          className={`flex-1 min-w-[100px] h-11 px-5 rounded-full text-sm transition-all duration-200 ${
-                            formState.companySize === size
-                              ? "bg-[#2C6DF9] text-white shadow-md"
-                              : "bg-[#F5F6FA] text-gray-700 hover:bg-[#E5E7EB]"
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Hidden company size for FormData */}
-                  <input
-                    type="hidden"
-                    name="companySize"
-                    value={formState.companySize}
-                  />
-
-                  {/* Source Dropdown */}
                   <div>
                     <label
-                      htmlFor="heardAbout"
-                      className="block text-gray-700 mb-2.5 text-sm font-medium"
+                      htmlFor="name"
+                      className="mb-2 block text-sm font-medium text-neutral-800"
                     >
-                      How did you find out about us?
+                      Your name
                     </label>
-                    <div className="relative">
-                      <select
-                        id="heardAbout"
-                        name="heardAbout"
-                        required
-                        defaultValue=""
-                        className="w-full h-12 px-4 pr-10 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm appearance-none transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2C6DF9] focus:border-transparent"
-                        style={{
-                          boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.03)",
-                        }}
-                      >
-                        <option value="" disabled>
-                          Select one
-                        </option>
-                        {(
-                          [
-                            "LinkedIn",
-                            "Product Hunt",
-                            "YC",
-                            "Friend/Colleague",
-                            "Search",
-                            "Other",
-                          ] as HeardAbout[]
-                        ).map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  {/* Features Grid */}
-                  <div>
-                    <label className="block text-gray-700 mb-3.5 text-sm font-medium">
-                      Which features are you most interested in?
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {FEATURE_OPTIONS.map((feature) => {
-                        const selected = formState.features.includes(feature);
-                        return (
-                          <button
-                            key={feature}
-                            type="button"
-                            onClick={() => toggleFeature(feature)}
-                            className={`relative h-12 px-4 rounded-xl border transition-all duration-200 text-left flex items-center text-sm ${
-                              selected
-                                ? "border-[#2C6DF9] bg-gradient-to-r from-[#2C6DF9]/5 to-[#6366F1]/5"
-                                : "border-gray-200 bg-white hover:border-gray-300"
-                            }`}
-                          >
-                            <div
-                              className={`w-5 h-5 rounded-md border-2 mr-3 flex items-center justify-center transition-all duration-200 ${
-                                selected
-                                  ? "border-[#2C6DF9] bg-[#2C6DF9]"
-                                  : "border-gray-300 bg-white"
-                              }`}
-                            >
-                              {selected && (
-                                <Check
-                                  className="w-3.5 h-3.5 text-white"
-                                  strokeWidth={3}
-                                />
-                              )}
-                            </div>
-                            <span
-                              className={
-                                selected ? "text-gray-900" : "text-gray-700"
-                              }
-                            >
-                              {feature}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Hidden feature inputs for FormData */}
-                    {formState.features.map((f) => (
-                      <input
-                        key={f}
-                        type="hidden"
-                        name="features"
-                        value={f}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Hidden tracking */}
-                  <input type="hidden" name="utm_source" />
-                  <input type="hidden" name="utm_medium" />
-                  <input type="hidden" name="utm_campaign" />
-                  <input type="hidden" name="utm_content" />
-                  <input type="hidden" name="referrer" />
-                  <input type="hidden" name="page" />
-
-                  {/* Honeypot */}
-                  <div aria-hidden="true" className="hidden">
                     <input
-                      name="website"
-                      tabIndex={-1}
-                      autoComplete="off"
+                      id="name"
+                      name="name"
+                      type="text"
+                      placeholder="Jane Smith"
+                      required
+                      className="h-12 w-full rounded-xl border border-blue-100 bg-white px-4 text-sm text-[#0f172a] placeholder:text-neutral-400 shadow-inner shadow-blue-100 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-200"
                     />
                   </div>
-
-                  {/* Submit Button */}
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={status === "loading"}
-                      className="w-full h-13 rounded-xl bg-gray-900 text-white text-sm font-medium transition-all duration-200 hover:bg-gray-800 active:scale-[0.99]"
-                      style={{
-                        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
-                      }}
+                  <div>
+                    <label
+                      htmlFor="company"
+                      className="mb-2 block text-sm font-medium text-neutral-800"
                     >
-                      {status === "loading" ? "Submitting…" : "Join waitlist"}
-                    </button>
-                    <p className="text-center text-gray-500 mt-4 text-xs">
-                      We'll never spam you. Unsubscribe anytime.
-                    </p>
+                      Company
+                    </label>
+                    <input
+                      id="company"
+                      name="company"
+                      type="text"
+                      placeholder="Acme Inc."
+                      required
+                      className="h-12 w-full rounded-xl border border-blue-100 bg-white px-4 text-sm text-[#0f172a] placeholder:text-neutral-400 shadow-inner shadow-blue-100 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    />
                   </div>
+                </div>
 
-                  {status === "ok" && (
-                    <p className="note note--ok">
-                      Thanks! You’re on the list.
-                    </p>
-                  )}
-                  {status === "error" && (
-                    <p className="note note--err">
-                      Something went wrong. Try again.
-                    </p>
-                  )}
-                </form>
-              </div>
+                <div>
+                  <label className="mb-2.5 block text-sm font-medium text-neutral-800">
+                    How big is your company?
+                  </label>
+                  <div className="flex flex-wrap gap-2.5">
+                    {COMPANY_SIZES.map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => handleCompanySizeSelect(size)}
+                        className={`min-w-[110px] flex-1 rounded-full border px-4 py-2.5 text-sm font-medium transition focus:outline-none ${
+                          formState.companySize === size
+                            ? "border-blue-400 bg-blue-500 text-white shadow-md shadow-blue-200"
+                            : "border-blue-100 bg-white text-neutral-800 hover:border-blue-200 hover:bg-blue-50"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <input
+                  type="hidden"
+                  name="companySize"
+                  value={formState.companySize}
+                />
+
+                <div>
+                  <label
+                    htmlFor="heardAbout"
+                    className="mb-2.5 block text-sm font-medium text-neutral-800"
+                  >
+                    How did you find out about us?
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="heardAbout"
+                      name="heardAbout"
+                      required
+                      defaultValue=""
+                      className="h-12 w-full appearance-none rounded-xl border border-blue-100 bg-white px-4 pr-10 text-sm text-neutral-800 placeholder:text-neutral-400 shadow-inner shadow-blue-100 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    >
+                      <option value="" disabled>
+                        Select one
+                      </option>
+                      {(
+                        [
+                          "LinkedIn",
+                          "Product Hunt",
+                          "YC",
+                          "Friend/Colleague",
+                          "Search",
+                          "Other",
+                        ] as HeardAbout[]
+                      ).map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2.5 block text-sm font-medium text-neutral-800">
+                    Which features are you most interested in?
+                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {FEATURE_OPTIONS.map((feature) => {
+                      const selected = formState.features.includes(feature);
+                      return (
+                        <button
+                          key={feature}
+                          type="button"
+                          onClick={() => toggleFeature(feature)}
+                          className={`group relative flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition ${
+                            selected
+                              ? "border-blue-500 bg-blue-500 text-white shadow-md shadow-blue-200"
+                              : "border-blue-100 bg-white text-neutral-800 hover:border-blue-200 hover:bg-blue-50"
+                          }`}
+                        >
+                          <div
+                            className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition ${
+                              selected
+                                ? "border-blue-500 bg-blue-500"
+                                : "border-blue-200 bg-white group-hover:border-blue-300"
+                            }`}
+                          >
+                            {selected && (
+                              <Check
+                                className="h-3.5 w-3.5 text-white"
+                                strokeWidth={3}
+                              />
+                            )}
+                          </div>
+                          <span className="leading-snug">{feature}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {formState.features.map((f) => (
+                    <input key={f} type="hidden" name="features" value={f} />
+                  ))}
+                </div>
+
+                <input type="hidden" name="utm_source" />
+                <input type="hidden" name="utm_medium" />
+                <input type="hidden" name="utm_campaign" />
+                <input type="hidden" name="utm_content" />
+                <input type="hidden" name="referrer" />
+                <input type="hidden" name="page" />
+
+                <div aria-hidden="true" className="hidden">
+                  <input name="website" tabIndex={-1} autoComplete="off" />
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    type="submit"
+                    disabled={status === "loading"}
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#2563eb] text-sm font-semibold text-white shadow-lg shadow-blue-200/80 transition hover:-translate-y-[1px] hover:bg-[#1d4ed8] active:translate-y-0"
+                  >
+                    {status === "loading" ? "Submitting…" : "Join waitlist"}
+                  </button>
+                  <p className="mt-3 text-center text-xs text-neutral-500">
+                    We&apos;ll never spam you. Unsubscribe anytime.
+                  </p>
+                </div>
+
+                {status === "ok" && (
+                  <p className="note note--ok mt-2 text-center text-sm text-emerald-600">
+                    Thanks! You&apos;re on the list.
+                  </p>
+                )}
+                {status === "error" && (
+                  <p className="note note--err mt-2 text-center text-sm text-rose-600">
+                    Something went wrong. Try again.
+                  </p>
+                )}
+              </form>
             </div>
           </div>
-
-          {/* Right info card */}
-          <aside
-            className="card p-6 md:p-7"
-            style={{ transform: `translateY(${offset * 0.3}px)` }}
-          >
-            <ul className="space-y-4 text-sm text-neutral-900">
-              {[
-                "Shared time context across ATS, HRIS, payroll, and calendars.",
-                "Orchestrate offers, onboarding, access, and reviews.",
-                "Policy-aware automations: MFA, JIT access, audits.",
-                "Real-time analytics and SLA alerts.",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-3">
-                  <span className="bullet" />
-                  <span>{t}</span>
-                </li>
-              ))}
-            </ul>
-          </aside>
-        </div>
-      </section>
-
-      {/* WHY */}
-      <section
-        id="why"
-        className="mx-auto max-w-5xl px-6 py-16 text-center"
-      >
-        <h2 className="text-2xl font-semibold">
-          HR tools don’t talk to each other
-        </h2>
-        <p className="mt-3 text-neutral-700">
-          Recruiting, onboarding, payroll, reviews—each has its own data and its
-          own “time.” Intime connects them into one living system that
-          understands people, schedules, and context—so work flows without
-          manual glue.
-        </p>
-
-        <div className="mx-auto mt-8 grid max-w-3xl grid-cols-3 gap-3 text-sm text-neutral-700">
-          {[
-            ["<10 min", "to set up a pilot"],
-            ["4 tools → 1", "average consolidation"],
-            ["50–70%", "fewer status pings"],
-          ].map(([big, small]) => (
-            <div
-              key={small}
-              className="rounded-xl border bg-white p-4 shadow-sm"
-            >
-              <div className="text-lg font-semibold">{big}</div>
-              <div className="mt-1 text-neutral-500">{small}</div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-6 flex justify-center">
-          <a href="#cta" className="ui-btn ui-btn--primary">
-            Join the waitlist
-          </a>
         </div>
       </section>
 
       {/* FEATURES */}
       <section
         id="features"
-        className="mx-auto max-w-6xl px-6 py-14"
+        className="mx-auto max-w-6xl px-5 py-16 md:px-6 lg:py-20"
       >
-        <div className="mb-6">
-          <h2 className="section-title">What you can expect</h2>
-          <p className="text-sm text-neutral-600">
-            A unified layer for HR & recruiting ops — built on time
-            intelligence.
-          </p>
+        <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+              Platform layers
+            </p>
+            <h2 className="mt-2 text-3xl font-semibold text-[#0f172a]">
+              Designed for data, hiring, and every stage of the employee lifecycle.
+            </h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              Intime unifies recruiting, onboarding, core HR, and reviews into one system that&apos;s
+              reporting-ready by design — no extra BI tool required.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-semibold text-blue-700 shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_5px_rgba(16,185,129,0.18)]" />
+            Live timeline + analytics-ready data model
+          </div>
         </div>
 
         <div className="grid gap-5 md:grid-cols-3">
           {[
             {
-              t: "Recruiting",
+              t: "Smart Hiring",
               b: [
-                "ATS basics without the bloat",
-                "Calendar-aware interview loops",
-                "Offer approvals",
+                "ATS built for operators, not agencies",
+                "AI-based resume ranking & interview signal",
+                "Offers with comp & headcount context baked in",
               ],
             },
             {
-              t: "Onboarding",
+              t: "Onboarding & Lifecycle",
               b: [
-                "Access + equipment requests",
-                "Policy checks (MFA, SOC, HIPAA)",
-                "Day-1 schedules",
+                "Role-based onboarding plans tied to start dates",
+                "Access, equipment, and policy tasks in one flow",
+                "PTO, changes, and exits all tracked on the same timeline",
               ],
             },
             {
-              t: "People Ops",
+              t: "People Data & Reporting",
               b: [
-                "Org & role management",
-                "Comp band references",
-                "Reviews, goals, SLAs",
+                "Headcount, funnel, and PTO reports in seconds",
+                "Performance & engagement insights across teams",
+                "Export if you want — but you won&apos;t need Excel",
               ],
             },
           ].map(({ t, b }) => (
-            <div key={t} className="feature-card">
-              <div className="feature-card__inner">
-                <h3 className="text-sm font-semibold text-neutral-900">
+            <div
+              key={t}
+              className="group relative overflow-hidden rounded-2xl border border-blue-100 bg-white p-6 shadow-md shadow-blue-100 transition hover:-translate-y-[2px] hover:border-blue-200 hover:shadow-lg"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-transparent to-indigo-50 opacity-0 transition group-hover:opacity-100" />
+              <div className="relative">
+                <div className="mb-3 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
                   {t}
-                </h3>
-                <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-700">
+                </div>
+                <ul className="space-y-2 text-sm text-neutral-700">
                   {b.map((x) => (
-                    <li key={x}>{x}</li>
+                    <li key={x} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                      <span>{x}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -664,176 +1109,370 @@ export default function Page() {
         </div>
       </section>
 
+      {/* AI STUDIO HIGHLIGHT */}
+      <section className="mx-auto max-w-6xl px-5 pb-16 md:px-6 lg:pb-20">
+        <div className="grid gap-8 rounded-3xl border border-blue-100 bg-gradient-to-br from-[#e8f1ff] via-white to-[#e4edff] p-6 shadow-xl shadow-blue-100 md:grid-cols-[1.1fr,0.9fr] md:p-10">
+          <div className="space-y-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+              Intime AI Studio
+            </p>
+            <h2 className="text-3xl font-semibold text-[#0f172a]">
+              Your HR co-pilot, grounded in your actual data.
+            </h2>
+            <p className="text-sm text-neutral-700">
+              AI Studio isn&apos;t a generic chat bot bolted on top. It&apos;s a set of tools that
+              understand your jobs, people, and timelines — so every suggestion is grounded in your
+              Intime data.
+            </p>
+            <ul className="space-y-2 text-sm text-neutral-800">
+              <li>• AI resume match & JD fit scoring with clear, explainable reasons.</li>
+              <li>• Time-based insights like “Why did time-to-fill spike this quarter?”</li>
+              <li>• Draft review summaries and calibration notes from structured inputs.</li>
+            </ul>
+          </div>
+          <div className="space-y-3 rounded-2xl bg-white/80 p-4 shadow-inner shadow-blue-100">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+              Example prompts
+            </p>
+            <div className="space-y-2 text-xs text-neutral-800">
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="font-semibold text-[#0f172a]">Hiring</p>
+                <p className="mt-1 text-neutral-700">
+                  “Compare the last 3 Senior Backend Engineer hires by source, time-to-fill, and
+                  ramp time.”
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="font-semibold text-[#0f172a]">People insights</p>
+                <p className="mt-1 text-neutral-700">
+                  “Explain why Engineering attrition ticked up last quarter, and which teams are most
+                  affected.”
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-3">
+                <p className="font-semibold text-[#0f172a]">Reviews</p>
+                <p className="mt-1 text-neutral-700">
+                  “Draft a performance summary for Alex based on their peer feedback and goals.”
+                </p>
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] text-neutral-500">
+              All outputs are tied back to structured Intime data, with clear links and filters —
+              not AI hallucinations.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* HOW */}
-      <section id="how" className="mx-auto max-w-6xl px-6 py-14">
-        <h2 className="section-title mb-6">How Intime Works</h2>
-        <div className="grid gap-8 md:grid-cols-3">
+      <section
+        id="how"
+        className="mx-auto max-w-6xl px-5 py-16 md:px-6 lg:py-20"
+      >
+        <div className="mb-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+            Operating model
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold text-[#0f172a]">
+            How Intime works
+          </h2>
+          <p className="mt-2 text-sm text-neutral-600">
+            Three pillars, one live system. Every action is tied to time and people data, with AI
+            automating the handoffs — so HR reporting becomes a side-effect of doing your job.
+          </p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
           {[
             {
               icon: "🧠",
               title: "Time Intelligence",
-              desc: "Every workflow—hiring, onboarding, payroll—runs on a shared understanding of time and context.",
+              desc: "Every workflow — hiring, onboarding, PTO, payroll — runs on a shared understanding of dates, milestones, and SLAs.",
             },
             {
               icon: "⚙️",
               title: "Unified Automations",
-              desc: "Trigger onboarding tasks, access controls, or reviews automatically across systems.",
+              desc: "Trigger tasks, approvals, and access changes automatically across the employee lifecycle with clear owners and due dates.",
             },
             {
-              icon: "📈",
-              title: "People Insights",
-              desc: "Track performance, engagement, and resource load in real time with a single data layer.",
+              icon: "📊",
+              title: "Instant People Reporting",
+              desc: "Headcount, funnel, and performance views are always current, without exporting CSVs or rebuilding the same Excel file.",
             },
           ].map(({ icon, title, desc }) => (
             <div
               key={title}
-              className="rounded-xl border bg-white p-6 shadow-sm"
+              className="relative overflow-hidden rounded-2xl border border-blue-100 bg-white p-6 shadow-md shadow-blue-100"
             >
-              <div className="text-3xl">{icon}</div>
-              <h3 className="mt-3 text-lg font-semibold">{title}</h3>
-              <p className="mt-1 text-sm text-neutral-600">{desc}</p>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-transparent to-indigo-50" />
+              <div className="relative">
+                <div className="text-3xl">{icon}</div>
+                <h3 className="mt-3 text-lg font-semibold text-[#0f172a]">
+                  {title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+                  {desc}
+                </p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
+      {/* COLLAB / COMMENTS DEMO */}
+      <section
+        id="collaboration"
+        className="mx-auto max-w-6xl px-5 py-16 md:px-6 lg:py-20"
+      >
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+              Collaboration
+            </p>
+            <h2 className="mt-1 text-3xl font-semibold text-[#0f172a]">
+              Comment directly on reports, reviews, and headcount plans.
+            </h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              Intime turns HR data into a shared workspace. Loop in managers with @mentions,
+              ask questions on top of live reports, and keep context attached to the work —
+              not buried in email or Slack.
+            </p>
+            <ul className="mt-3 space-y-1.5 text-xs text-neutral-600">
+              <li>• @mention any employee or manager from HRIS data.</li>
+              <li>• Comments stay attached to reports and reviews with full history.</li>
+              <li>• No screenshots or “can you send me that spreadsheet?” messages.</li>
+            </ul>
+          </div>
+          <div className="text-xs text-neutral-500 md:text-right">
+            <p>Demo: Monthly engineering report discussion</p>
+            <p>Try adding your own comment to see how it feels in-product.</p>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-blue-100 bg-white/90 p-4 shadow-xl shadow-blue-100 sm:p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                Monthly engineering report
+              </p>
+              <p className="text-[11px] text-neutral-600">
+                Time-to-fill, offers, and attrition across Engineering for this month.
+              </p>
+            </div>
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-800">
+              Report • Live
+            </span>
+          </div>
+          <CommentsDemo />
+        </div>
+      </section>
+
+      {/* REPORTS TABS */}
+      <ReportsTabs />
+
       {/* DEMO */}
-      <section id="demo" className="mx-auto max-w-6xl px-6 py-14">
-        <h2 className="section-title">JD ↔ Candidate Fit (Demo)</h2>
-        <p className="mt-1 text-sm text-neutral-600">
-          Paste a Job Description and Candidate Notes to see an instant
-          alignment score with explainable strengths &amp; gaps.
-        </p>
-        <div className="mt-6">
+      <section
+        id="demo"
+        className="mx-auto max-w-6xl px-5 py-16 md:px-6 lg:py-20"
+      >
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+              Live AI
+            </p>
+            <h2 className="mt-1 text-3xl font-semibold text-[#0f172a]">
+              JD ↔ Candidate Fit (Demo)
+            </h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              Paste a Job Description and Candidate Notes to see an instant alignment score —
+              with explainable strengths, gaps, and a hiring recommendation you can share.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-semibold text-blue-700 shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_5px_rgba(16,185,129,0.18)]" />
+            Runs in-browser — client-only demo
+          </div>
+        </div>
+        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-[#f3f7ff] via-white to-[#eef5ff] p-5 shadow-lg shadow-blue-100/70">
           <AiResumeMatch />
+        </div>
+      </section>
+
+      {/* TEAM TYPES / PERSONAS */}
+      <section className="mx-auto max-w-6xl px-5 pb-16 md:px-6 lg:pb-20">
+        <div className="mb-6 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-blue-700">
+            For modern teams
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold text-[#0f172a]">
+            Built for People leaders, founders, and managers.
+          </h2>
+          <p className="mt-2 text-sm text-neutral-600">
+            Intime works best when HR is being asked for answers — and doesn&apos;t want to live in spreadsheets.
+          </p>
+        </div>
+        <div className="grid gap-5 md:grid-cols-3">
+          <div className="rounded-2xl border border-blue-100 bg-white p-5 text-sm shadow-md shadow-blue-100">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+              Heads of People
+            </p>
+            <p className="mt-2 font-semibold text-[#0f172a]">
+              See the whole employee lifecycle at a glance.
+            </p>
+            <p className="mt-2 text-neutral-700">
+              One place to answer: Who did we hire? How long did it take? Who&apos;s at risk?
+              How are reviews and promotions trending?
+            </p>
+          </div>
+          <div className="rounded-2xl border border-blue-100 bg-white p-5 text-sm shadow-md shadow-blue-100">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+              Founders & execs
+            </p>
+            <p className="mt-2 font-semibold text-[#0f172a]">
+              Answers, not screenshots.
+            </p>
+            <p className="mt-2 text-neutral-700">
+              Instead of “Can you send me the latest headcount sheet?”, leaders open Intime and
+              see live hiring, PTO, and review data themselves.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-blue-100 bg-white p-5 text-sm shadow-md shadow-blue-100">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+              Managers
+            </p>
+            <p className="mt-2 font-semibold text-[#0f172a]">
+              Know your team without learning another tool.
+            </p>
+            <p className="mt-2 text-neutral-700">
+              Managers see who&apos;s joining, who&apos;s out, and where candidates are —
+              without juggling a separate ATS, HRIS, and calendar.
+            </p>
+          </div>
         </div>
       </section>
 
       {/* PRICING */}
       <section
         id="pricing"
-        className="mx-auto max-w-6xl px-6 py-20"
+        className="mx-auto max-w-6xl px-5 pb-16 md:px-6"
       >
-        <div className="mb-8 text-center">
-          <h2 className="section-title text-3xl font-semibold">
-            Pricing that scales with your team
+        <div className="mb-10 text-center">
+          <h2 className="text-3xl font-semibold text-[#0f172a]">
+            Pricing that replaces tools, not just adds another one
           </h2>
           <p className="mt-3 text-neutral-700">
             Platform-first pricing: a flat base fee plus a per-employee-per-month (PEPM) add-on.
+            Intime is built to replace your ATS, onboarding tracker, HRIS spreadsheets, and half
+            your “quick” reports.
           </p>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-neutral-600">
             First <strong>50 companies</strong> get <strong>3 months free</strong> during early access.
           </p>
-
-          {/* AI Studio highlight */}
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-900 text-slate-50 px-4 py-1.5 text-[11px] shadow-sm">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="font-medium">
-              Intime AI Studio is included on all paid plans —{" "}
-              <span className="text-emerald-300">fully unlocked on Growth & Scale</span>.
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-[11px] font-semibold text-blue-800 shadow-sm shadow-blue-100">
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_4px_rgba(16,185,129,0.18)]" />
+            <span>
+              Intime <span className="text-blue-700">AI Studio</span> is included on all paid plans —{" "}
+              <span className="text-blue-700">fully unlocked on Growth &amp; Scale</span>.
             </span>
           </div>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-3">
-          {/* STARTER */}
-          <div className="rounded-2xl border bg-white p-8 shadow-sm">
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="rounded-2xl border border-blue-100 bg-white p-8 text-[#0f172a] shadow-md shadow-blue-100">
             <h3 className="text-xl font-semibold">Starter</h3>
-            <p className="mt-1 text-sm text-neutral-600">
+            <p className="mt-2 text-sm text-neutral-600">
               For teams up to ~15–20 employees
             </p>
-
-            <p className="mt-4 text-2xl font-semibold">$79/mo</p>
+            <p className="mt-5 text-3xl font-semibold">$79/mo</p>
             <p className="text-sm text-neutral-600">Base platform fee</p>
             <p className="mt-1 text-sm text-neutral-800">
               + <strong>$6</strong> per employee / month
             </p>
-
-            <ul className="mt-5 space-y-2 text-sm text-neutral-700">
+            <ul className="mt-6 space-y-2 text-sm text-neutral-700">
               <li>✔ Applicant Tracking (ATS)</li>
               <li>✔ Basic People Directory</li>
               <li>✔ Time Off + Calendar</li>
               <li>✔ Onboarding checklists</li>
               <li>✔ Basic AI features (screening, summaries)</li>
             </ul>
-
-            <button
-              type="button"
-              onClick={() =>
-                prefillAndFocus({
-                  size: "11-50",
-                  features: [
-                    "ATS & hiring pipeline",
-                    "Scheduling & time tracking",
-                  ],
-                })
-              }
-              className="ui-btn ui-btn--primary mt-6 w-full"
-            >
-              I’m a Starter team
-            </button>
+            <Link href="https://intime-frontend-three.vercel.app/signup?plan=starter">
+              <button
+                type="button"
+                onClick={() =>
+                  prefillAndFocus({
+                    size: "11-50",
+                    features: [
+                      "ATS & hiring pipeline",
+                      "Scheduling & time tracking",
+                    ],
+                  })
+                }
+                className="mt-7 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                I&apos;m a Starter team
+              </button>
+            </Link>
           </div>
 
-          {/* GROWTH */}
-          <div className="relative rounded-2xl border-2 border-black bg-white p-8 shadow-sm">
-            <span className="absolute -top-3 left-6 rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+          <div className="relative overflow-hidden rounded-2xl border-2 border-blue-300 bg-gradient-to-b from-[#e8f0ff] via-white to-[#e7edff] p-8 text-[#0f172a] shadow-xl shadow-blue-200">
+            <div className="mb-4 inline-flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 shadow-sm">
               Most popular • Full AI Studio
-            </span>
-
-            <h3 className="mt-4 text-xl font-semibold">Growth</h3>
-            <p className="mt-1 text-sm text-neutral-600">
+            </div>
+            <h3 className="text-xl font-semibold">Growth</h3>
+            <p className="mt-2 text-sm text-neutral-700">
               Best for 20–150 employee companies
             </p>
-
-            <p className="mt-4 text-2xl font-semibold">$199/mo</p>
+            <p className="mt-6 text-3xl font-semibold">$199/mo</p>
             <p className="text-sm text-neutral-600">Base platform fee</p>
             <p className="mt-1 text-sm text-neutral-800">
               + <strong>$10</strong> per employee / month
             </p>
-
-            <ul className="mt-5 space-y-2 text-sm text-neutral-700">
+            <ul className="mt-6 space-y-2 text-sm text-neutral-750">
               <li>✔ Everything in Starter</li>
               <li>✔ Team org chart</li>
               <li>✔ Custom PTO policies</li>
               <li>✔ Advanced AI matching & scoring</li>
-              <li>✔ Full AI Studio access</li>
+              <li>
+                ✔{" "}
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-800">
+                  Full AI Studio
+                </span>{" "}
+                access
+              </li>
               <li>✔ Templates (offers, onboarding, reviews)</li>
               <li>✔ Roles & permissions</li>
               <li>✔ Gmail / Outlook / Slack integrations</li>
             </ul>
-
-            <button
-              type="button"
-              onClick={() =>
-                prefillAndFocus({
-                  size: "51-200",
-                  features: [
-                    "Org chart & directory",
-                    "Performance & reviews",
-                    "People analytics",
-                  ],
-                })
-              }
-              className="ui-btn ui-btn--primary mt-6 w-full"
-            >
-              I’m a Growth team
-            </button>
+            <Link href="https://intime-frontend-three.vercel.app/signup?plan=growth">
+              <button
+                type="button"
+                onClick={() =>
+                  prefillAndFocus({
+                    size: "51-200",
+                    features: [
+                      "Org chart & directory",
+                      "Performance & reviews",
+                      "People analytics",
+                    ],
+                  })
+                }
+                className="mt-7 w-full inline-flex items-center justify-center rounded-xl bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white shadow-md shadow-blue-200 transition hover:-translate-y-[1px] hover:bg-[#1d4ed8]"
+              >
+                I&apos;m a Growth team
+              </button>
+            </Link>
           </div>
 
-          {/* SCALE */}
-          <div className="rounded-2xl border bg-white p-8 shadow-sm">
+          <div className="rounded-2xl border border-blue-100 bg-white p-8 text-[#0f172a] shadow-md shadow-blue-100">
             <h3 className="text-xl font-semibold">Scale</h3>
-            <p className="mt-1 text-sm text-neutral-600">
+            <p className="mt-2 text-sm text-neutral-600">
               For full HRIS needs + SSO
             </p>
-
-            <p className="mt-4 text-2xl font-semibold">$399/mo</p>
+            <p className="mt-5 text-3xl font-semibold">$399/mo</p>
             <p className="text-sm text-neutral-600">Base platform fee</p>
             <p className="mt-1 text-sm text-neutral-800">
               + <strong>$14</strong> per employee / month
             </p>
-
-            <ul className="mt-5 space-y-2 text-sm text-neutral-700">
+            <ul className="mt-6 space-y-2 text-sm text-neutral-700">
               <li>✔ Everything in Growth</li>
               <li>✔ Performance reviews</li>
               <li>✔ Compensation planning</li>
@@ -842,23 +1481,24 @@ export default function Page() {
               <li>✔ Early Payroll integration</li>
               <li>✔ SSO (Google / Azure AD)</li>
             </ul>
-
-            <button
-              type="button"
-              onClick={() =>
-                prefillAndFocus({
-                  size: "201-1000",
-                  features: [
-                    "People analytics",
-                    "Payroll integrations",
-                    "Performance & reviews",
-                  ],
-                })
-              }
-              className="ui-btn ui-btn--primary mt-6 w-full"
-            >
-              I’m a Scale team
-            </button>
+            <Link href="https://intime-frontend-three.vercel.app/signup?plan=scale">
+              <button
+                type="button"
+                onClick={() =>
+                  prefillAndFocus({
+                    size: "201-1000",
+                    features: [
+                      "People analytics",
+                      "Payroll integrations",
+                      "Performance & reviews",
+                    ],
+                  })
+                }
+                className="mt-7 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                I&apos;m a Scale team
+              </button>
+            </Link>
           </div>
         </div>
 
@@ -868,21 +1508,33 @@ export default function Page() {
             Contact us
           </a>
         </div>
+      </section>
 
-        <div className="mt-10 text-center">
-          <a href="#cta" className="ui-btn ui-btn--primary">
-            Join the Early Access Waitlist
-          </a>
+      {/* FOUNDERS / WHY WE BUILT THIS */}
+      <section className="mx-auto max-w-6xl px-5 pb-16 md:px-6 lg:pb-20">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm shadow-md shadow-slate-100 md:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+            Why we&apos;re building Intime
+          </p>
+          <p className="mt-3 text-base font-semibold text-[#0f172a]">
+            Built by an internal recruiter and an engineer who were tired of running HR out of spreadsheets.
+          </p>
+          <p className="mt-2 text-neutral-700">
+            Intime started after running hiring, onboarding, and reviews for a growing team with nothing more
+            than a legacy HRIS and way too many Excel files. The premise is simple: your HR system should already
+            know enough to answer leadership questions — without you having to export, clean, and re-present data
+            every single week.
+          </p>
+          <p className="mt-2 text-neutral-700">
+            We&apos;re building the HRIS we wish we had: time-aware, AI-native, and opinionated about what great
+            people operations should look like.
+          </p>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t py-8 text-center text-sm text-neutral-600">
+      <footer className="border-t border-blue-100 bg-white py-8 text-center text-sm text-neutral-600">
         © {new Date().getFullYear()} Intime •{" "}
-        <a
-          className="underline"
-          href="mailto:hello@hireintime.ai"
-        >
+        <a className="underline" href="mailto:hello@hireintime.ai">
           hello@hireintime.ai
         </a>
       </footer>
