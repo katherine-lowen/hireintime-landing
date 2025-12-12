@@ -111,6 +111,14 @@ input, select { transition: border-color .2s, box-shadow .2s; }
 .ui-btn--ghost{ background:#fff; }
 .ui-btn--ghost:hover{ background:#f9fafb; }
 
+/* --- Force white text on blue buttons --- */
+button[class*="bg-blue-"],
+a[class*="bg-blue-"],
+button[class*="bg-[#2C6DF9]"],
+a[class*="bg-[#2C6DF9]"] {
+  color: #ffffff !important;
+}
+
 /* Make native controls feel consistent */
 input[type="radio"], input[type="checkbox"] { accent-color: #111; }
 

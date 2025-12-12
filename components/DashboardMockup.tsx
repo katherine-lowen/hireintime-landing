@@ -27,17 +27,17 @@ export function DashboardMockup() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200/60">
         <div>
-          <h3 className="text-2xl text-black font-bold mb-1">Hiring Dashboard</h3>
+          <h3 className="text-2xl text-white font-bold mb-1">Hiring Dashboard</h3>
           <p className="text-sm text-gray-500">Last updated: September 2025</p>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg hover:bg-gray-100">
+          <button className="px-4 py-2 text-sm text-gray-600 hover:text-white transition-colors rounded-lg hover:bg-gray-100">
             This Month
           </button>
-          <button className="px-4 py-2 text-sm text-black bg-gray-100 rounded-lg">
+          <button className="px-4 py-2 text-sm text-white bg-gray-100 rounded-lg">
             This Quarter
           </button>
-          <button className="px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg hover:bg-gray-100">
+          <button className="px-4 py-2 text-sm text-gray-600 hover:text-white transition-colors rounded-lg hover:bg-gray-100">
             This Year
           </button>
         </div>
@@ -61,7 +61,7 @@ export function DashboardMockup() {
               </div>
               <span className="text-sm text-gray-600">Open Roles</span>
             </div>
-            <div className="text-3xl text-black font-bold">12</div>
+            <div className="text-3xl text-white font-bold">12</div>
             <div className="flex items-center gap-1 mt-2">
               <TrendingUp className="w-3 h-3 text-emerald-600" />
               <span className="text-xs text-emerald-600">+3 this week</span>
@@ -84,7 +84,7 @@ export function DashboardMockup() {
               </div>
               <span className="text-sm text-gray-600">Hires This Month</span>
             </div>
-            <div className="text-3xl text-black font-bold">10</div>
+            <div className="text-3xl text-white font-bold">10</div>
             <div className="flex items-center gap-1 mt-2">
               <TrendingUp className="w-3 h-3 text-emerald-600" />
               <span className="text-xs text-emerald-600">+25% vs last month</span>
@@ -107,7 +107,7 @@ export function DashboardMockup() {
               </div>
               <span className="text-sm text-gray-600">Avg Time to Fill</span>
             </div>
-            <div className="text-3xl text-black font-bold">18d</div>
+            <div className="text-3xl text-white font-bold">18d</div>
             <div className="flex items-center gap-1 mt-2">
               <TrendingUp className="w-3 h-3 text-emerald-600" />
               <span className="text-xs text-emerald-600">-10 days improved</span>
@@ -130,7 +130,7 @@ export function DashboardMockup() {
               </div>
               <span className="text-sm text-gray-600">Offer Accept Rate</span>
             </div>
-            <div className="text-3xl text-black font-bold">92%</div>
+            <div className="text-3xl text-white font-bold">92%</div>
             <div className="flex items-center gap-1 mt-2">
               <TrendingUp className="w-3 h-3 text-emerald-600" />
               <span className="text-xs text-emerald-600">+7% vs target</span>
@@ -146,7 +146,7 @@ export function DashboardMockup() {
         <div className="rounded-xl bg-white p-6 border border-gray-200/60 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h4 className="text-black font-bold mb-1">Hiring Trend</h4>
+              <h4 className="text-white font-bold mb-1">Hiring Trend</h4>
               <p className="text-sm text-gray-500">Monthly hires over time</p>
             </div>
             <div className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export function DashboardMockup() {
         <div className="rounded-xl bg-white p-6 border border-gray-200/60 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h4 className="text-black font-bold mb-1">Time to Fill Progress</h4>
+              <h4 className="text-white font-bold mb-1">Time to Fill Progress</h4>
               <p className="text-sm text-gray-500">Average days per week</p>
             </div>
             <div className="flex items-center gap-2">
@@ -229,13 +229,13 @@ export function DashboardMockup() {
       <div className="mt-6 rounded-xl bg-white p-6 border border-gray-200/60 shadow-sm">
         <div className="flex items-center gap-2 mb-5">
           <Calendar className="w-5 h-5 text-gray-600" strokeWidth={2} />
-          <h4 className="text-black font-bold">Recent Activity</h4>
+          <h4 className="text-white font-bold">Recent Activity</h4>
         </div>
         <div className="space-y-3">
           <div className="flex items-center gap-4 p-3 rounded-lg bg-gradient-to-r from-blue-50/50 to-purple-50/50 border border-blue-100/50">
             <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
             <div className="flex-1">
-              <p className="text-sm text-black font-medium">Sarah Chen started as Senior Designer</p>
+              <p className="text-sm text-white font-medium">Sarah Chen started as Senior Designer</p>
               <p className="text-xs text-gray-500">2 hours ago</p>
             </div>
           </div>
