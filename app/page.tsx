@@ -757,19 +757,22 @@ export default function Page() {
               </li>
             </ul>
             <div className="flex flex-wrap gap-3 pt-1">
-              <a
-                href="#cta"
-                className="rounded-full bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-200/80 transition hover:-translate-y-[1px] hover:bg-[#1d4ed8]"
-              >
-                Join the waitlist
-              </a>
-              <a
-                href="#features"
-                className="rounded-full border border-blue-100 bg-white px-4 py-2.5 text-sm font-semibold text-[#0f172a] shadow-sm transition hover:-translate-y-[1px] hover:border-blue-200 hover:bg-blue-50"
-              >
-                Explore the platform
-              </a>
-            </div>
+  {/* Primary blue pill – white text */}
+  <a
+    href="#cta"
+    className="inline-flex items-center justify-center rounded-full bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-200/70 transition hover:-translate-y-[1px] hover:bg-[#1d4ed8]"
+  >
+    Join the waitlist
+  </a>
+
+  {/* Secondary white pill – dark text */}
+  <a
+    href="#features"
+    className="inline-flex items-center justify-center rounded-full border border-[#dbeafe] bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-[1px] hover:border-[#2563eb] hover:bg-[#eff4ff]"
+  >
+    Explore the platform
+  </a>
+</div>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             {statItems.map(({ label, value }) => (

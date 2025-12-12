@@ -9,8 +9,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // 🔥 PRIMARY BUTTON — now ALWAYS white text
-        default: "bg-primary text-white hover:bg-primary/90",
+        // Primary brand button: Intime blue + white text
+        default:
+          "bg-[#2563eb] text-white hover:bg-[#1d4ed8] shadow-sm shadow-blue-200",
 
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
@@ -26,7 +27,6 @@ const buttonVariants = cva(
 
         link: "text-primary underline-offset-4 hover:underline",
       },
-
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
@@ -36,7 +36,6 @@ const buttonVariants = cva(
         "icon-lg": "size-10",
       },
     },
-
     defaultVariants: {
       variant: "default",
       size: "default",

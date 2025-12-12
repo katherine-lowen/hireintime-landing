@@ -31,6 +31,7 @@ html, body {
 /* Links & forms */
 a { color: inherit; text-decoration: none; }
 a:hover { opacity: 0.9; }
+
 input, button, select { font-family: inherit; }
 button { transition: background-color .2s, color .2s, transform .15s; }
 input, select { transition: border-color .2s, box-shadow .2s; }
@@ -111,19 +112,16 @@ input, select { transition: border-color .2s, box-shadow .2s; }
 .ui-btn--ghost{ background:#fff; }
 .ui-btn--ghost:hover{ background:#f9fafb; }
 
-/* --- Force white text on blue buttons --- */
-button[class*="bg-blue-"],
-a[class*="bg-blue-"],
-button[class*="bg-[#2C6DF9]"],
-a[class*="bg-[#2C6DF9]"] {
+/* ---------------- Brand-blue buttons: force white text ONLY on real CTAs ---------------- */
+button[class*="bg-[#2563eb]"],
+a[class*="bg-[#2563eb]"] {
   color: #ffffff !important;
 }
 
 /* Make native controls feel consistent */
 input[type="radio"], input[type="checkbox"] { accent-color: #111; }
 
-/* ---------------- Tile selectors (radio/checkbox “pills”) ---------------- */
-/* Usage: <label class="tile"> <input ...> <span>Label</span> </label> */
+/* ---------------- Tile selectors ---------------- */
 label.tile{
   display:flex; align-items:center; gap:.5rem;
   min-height:2.5rem; padding:.5rem .75rem;
@@ -137,7 +135,7 @@ label.tile:has(:checked){
   border-color:#111; background:#fafafa;
 }
 
-/* Bullet used in spec list */
+/* Bullet */
 .bullet {
   display:inline-block; width:.5rem; height:.5rem; border-radius:9999px;
   background:#111; margin-top:.45rem; flex-shrink:0;
@@ -159,7 +157,7 @@ label.tile:has(:checked){
 .note{ font-size:12px; }
 .note--ok{ color:#0a7a32 } .note--err{ color:#b00020 } .note--warn{ color:#92400e }
 
-/* ---------------- shadcn/ui token mapping ---------------- */
+/* ---------------- shadcn token mapping ---------------- */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
