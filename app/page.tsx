@@ -16,11 +16,11 @@ const CommentsDemo = dynamic(
   { ssr: false }
 );
 
-const APP_BASE_URL =
-  process.env.NEXT_PUBLIC_APP_BASE_URL ?? "http://localhost:3000";
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://app.hireintime.ai";
 
-const LOGIN_URL = `${APP_BASE_URL}/login`;
-const SIGNUP_URL = `${APP_BASE_URL}/signup`;
+const LOGIN_URL = `${APP_URL}/login`;
+const SIGNUP_URL = `${APP_URL}/signup`;
 
 type CompanySize = "1-10" | "11-50" | "51-200" | "201-1000" | "1000+";
 type HeardAbout =
@@ -1397,7 +1397,7 @@ export default function Page() {
               <li>✔ Onboarding checklists</li>
               <li>✔ Basic AI features (screening, summaries)</li>
             </ul>
-            <Link href="https://intime-frontend-three.vercel.app/signup?plan=starter">
+            <Link href={`${SIGNUP_URL}?plan=starter`}>
               <button
                 type="button"
                 onClick={() =>
@@ -1445,7 +1445,7 @@ export default function Page() {
               <li>✔ Roles & permissions</li>
               <li>✔ Gmail / Outlook / Slack integrations</li>
             </ul>
-            <Link href="https://intime-frontend-three.vercel.app/signup?plan=growth">
+            <Link href={`${SIGNUP_URL}?plan=growth`}>
               <button
                 type="button"
                 onClick={() =>
@@ -1484,7 +1484,7 @@ export default function Page() {
               <li>✔ Early Payroll integration</li>
               <li>✔ SSO (Google / Azure AD)</li>
             </ul>
-            <Link href="https://intime-frontend-three.vercel.app/signup?plan=scale">
+            <Link href={`${SIGNUP_URL}?plan=scale`}>
               <button
                 type="button"
                 onClick={() =>

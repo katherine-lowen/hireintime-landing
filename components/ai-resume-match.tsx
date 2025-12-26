@@ -2,24 +2,27 @@
 
 import * as React from "react";
 
-/** Shape returned by /lib/matchkeywords.ts */
-type ApiResult = {
-  overallScore: number; // 0–100
-  verdict: "Strong match" | "Partial match" | "Weak match" | string;
+type BucketCounts = {
+  must: { matched: number; total: number };
+  nice: { matched: number; total: number };
+  general: { matched: number; total: number };
+};
+
+type FitResult = {
   summary: string;
+  must_have_matched: string[];
+  must_have_missing: string[];
+  nice_to_have_matched: string[];
+  nice_to_have_missing: string[];
+  general_matched: string[];
+  general_missing: string[];
+  overallScore: number; // 0–100
+  overallLabel: string; // e.g. "Strong match", "Moderate match", "Weak match"
+  _counts?: BucketCounts;
+};
 
-  mustHaveMatched: string[];
-  mustHaveMissing: string[];
-  niceToHaveMatched: string[];
-  niceToHaveMissing: string[];
-  generalMatched: string[];
-  generalMissing: string[];
-
-  _counts: {
-    must: { matched: number; total: number };
-    nice: { matched: number; total: number };
-    general: { matched: number; total: number };
-  };
+type PlausibleWindow = Window & {
+  plausible?: (event: string, options?: { props?: Record<string, unknown> }) => void;
 };
 
 const WEIGHTS = { must: 0.6, nice: 0.3, general: 0.1 }; // display only
@@ -28,83 +31,44 @@ function clsx(...p: Array<string | false | null | undefined>) {
   return p.filter(Boolean).join(" ");
 }
 
-function scoreColor(score: number) {
-  if (score >= 85) return "text-emerald-600";
-  if (score >= 70) return "text-amber-600";
-  if (score >= 55) return "text-orange-600";
-  return "text-rose-600";
+const clamp = (arr: string[] | undefined, n = 4) =>
+  Array.isArray(arr) ? arr.slice(0, n) : [];
+
+function pillClassFor(label: string) {
+  const normalized = (label || "").toLowerCase();
+  if (normalized.includes("strong")) return "rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700";
+  if (normalized.includes("moderate") || normalized.includes("partial"))
+    return "rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700";
+  if (normalized.includes("weak")) return "rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700";
+  return "rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700";
 }
 
-/** Strip boilerplate prefixes the extractor can surface so chips read clean */
-function cleanTagLabel(s: string) {
-  return s
-    .replace(/\bjob description:\s*/gi, "")
-    .replace(/\blocation:\s*/gi, "")
-    .replace(/\bdepartment:\s*/gi, "")
-    .replace(/\breports to:\s*/gi, "")
-    .replace(/\bwe('re| are)\s*/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** Compact, expandable chip grid */
-function ChipList({
+function PillSection({
   title,
   items,
   tone,
-  max = 8,
 }: {
   title: string;
   items: string[];
-  tone: "good" | "warn";
-  max?: number;
+  tone: "match" | "gap";
 }) {
-  const [expanded, setExpanded] = React.useState(false);
-  const visible = expanded ? items : items.slice(0, max);
-  const hidden = Math.max(0, items.length - visible.length);
+  const pillClass =
+    tone === "match"
+      ? "inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800"
+      : "inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800";
 
   return (
-    <div
-      className={clsx(
-        "h-full rounded-2xl border p-4",
-        tone === "good"
-          ? "border-emerald-200/60 bg-emerald-50/40"
-          : "border-amber-200/60 bg-amber-50/40"
-      )}
-    >
-      <div
-        className={clsx(
-          "text-sm font-medium",
-          tone === "good" ? "text-emerald-700" : "text-amber-700"
-        )}
-      >
-        {title}
-      </div>
-
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {visible && visible.length ? (
-          visible.map((t, i) => (
-            <span
-              key={`${t}-${i}`}
-              title={cleanTagLabel(t)}
-              className="max-w-[220px] truncate rounded-full bg-white px-2.5 py-1 text-[12px] text-neutral-800 shadow-sm ring-1 ring-neutral-200"
-            >
-              {cleanTagLabel(t)}
+    <div className="space-y-2">
+      <div className="text-sm font-semibold text-[#0f172a]">{title}</div>
+      <div className="mt-0 flex flex-wrap gap-1.5">
+        {items && items.length ? (
+          items.map((item, idx) => (
+            <span key={`${item}-${idx}`} className={pillClass}>
+              {item}
             </span>
           ))
         ) : (
           <span className="text-xs text-neutral-500">—</span>
-        )}
-
-        {hidden > 0 && !expanded && (
-          <button
-            type="button"
-            onClick={() => setExpanded(true)}
-            className="rounded-full bg-white px-2.5 py-1 text-[12px] text-neutral-700 ring-1 ring-neutral-300 hover:bg-neutral-50"
-            title="Show all"
-          >
-            +{hidden} more
-          </button>
         )}
       </div>
     </div>
@@ -116,13 +80,14 @@ export default function AiResumeMatch() {
   const [candidateNotes, setCand] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [result, setResult] = React.useState<ApiResult | null>(null);
+  const [result, setResult] = React.useState<FitResult | null>(null);
   const [showCounts, setShowCounts] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setResult(null);
+    setShowCounts(false);
     setLoading(true);
     try {
       const res = await fetch("/api/ai-demo", {
@@ -135,31 +100,40 @@ export default function AiResumeMatch() {
       const json = raw ? JSON.parse(raw) : {};
       if (!res.ok) throw new Error(json?.error || `Request failed (${res.status})`);
 
-      const safe: ApiResult = {
-        overallScore: Number(json.overallScore ?? 0),
-        verdict: String(json.verdict ?? "Partial match"),
+      const rawResult: Partial<FitResult> = {
         summary: String(json.summary ?? ""),
-
-        mustHaveMatched: json.mustHaveMatched ?? [],
-        mustHaveMissing: json.mustHaveMissing ?? [],
-        niceToHaveMatched: json.niceToHaveMatched ?? [],
-        niceToHaveMissing: json.niceToHaveMissing ?? [],
-        generalMatched: json.generalMatched ?? [],
-        generalMissing: json.generalMissing ?? [],
-
-        _counts: json._counts ?? {
-          must: { matched: 0, total: 0 },
-          nice: { matched: 0, total: 0 },
-          general: { matched: 0, total: 0 },
-        },
+        must_have_matched: json.must_have_matched ?? json.mustHaveMatched ?? [],
+        must_have_missing: json.must_have_missing ?? json.mustHaveMissing ?? [],
+        nice_to_have_matched: json.nice_to_have_matched ?? json.niceToHaveMatched ?? [],
+        nice_to_have_missing: json.nice_to_have_missing ?? json.niceToHaveMissing ?? [],
+        general_matched: json.general_matched ?? json.generalMatched ?? [],
+        general_missing: json.general_missing ?? json.generalMissing ?? [],
+        overallScore: Number(json.overallScore ?? 0),
+        overallLabel: String(json.overallLabel ?? json.verdict ?? ""),
+        _counts: json._counts,
       };
 
-      setResult(safe);
-      if (typeof window !== "undefined" && (window as any).plausible) {
-        (window as any).plausible("ai_demo_scored", { props: { score: safe.overallScore } });
+      const result: FitResult = {
+        summary: rawResult.summary ?? "",
+        overallScore: rawResult.overallScore ?? 0,
+        overallLabel: rawResult.overallLabel ?? "",
+        must_have_matched: clamp(rawResult.must_have_matched),
+        must_have_missing: clamp(rawResult.must_have_missing),
+        nice_to_have_matched: clamp(rawResult.nice_to_have_matched),
+        nice_to_have_missing: clamp(rawResult.nice_to_have_missing),
+        general_matched: clamp(rawResult.general_matched),
+        general_missing: clamp(rawResult.general_missing),
+        _counts: rawResult._counts,
+      };
+
+      setResult(result);
+      if (typeof window !== "undefined") {
+        const w = window as PlausibleWindow;
+        w.plausible?.("ai_demo_scored", { props: { score: result.overallScore } });
       }
-    } catch (err: any) {
-      setError(err?.message || "Something went wrong");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -181,13 +155,6 @@ export default function AiResumeMatch() {
       reader.readAsText(file);
     };
   }
-
-  const Score = ({ value, verdict }: { value: number; verdict: string }) => (
-    <div className="text-center">
-      <div className={clsx("text-3xl font-semibold", scoreColor(value))}>{value}%</div>
-      <div className="text-xs text-neutral-500">{verdict}</div>
-    </div>
-  );
 
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -295,16 +262,6 @@ export default function AiResumeMatch() {
               )}
             </div>
           </form>
-
-          {result && (
-            <button
-              type="button"
-              onClick={() => setShowCounts((s) => !s)}
-              className="text-xs underline text-neutral-600"
-            >
-              {showCounts ? "Hide" : "Show"} bucket counts
-            </button>
-          )}
         </div>
 
         {/* Results */}
@@ -317,50 +274,69 @@ export default function AiResumeMatch() {
               </div>
             </div>
           ) : (
-            <div className="grid gap-5 p-5">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <div className="text-xs uppercase tracking-wide text-neutral-500">Overall Score</div>
-                  <div className="mt-1">
-                    <Score value={result.overallScore} verdict={result.verdict} />
-                  </div>
-                  <div className="mt-2 text-[13px] leading-5 text-neutral-700">{result.summary}</div>
-                </div>
-                <div className="rounded-md border bg-neutral-50 p-3 text-xs text-neutral-600">
-                  Weights: Must {Math.round(WEIGHTS.must * 100)}% • Nice {Math.round(WEIGHTS.nice * 100)}% • General {Math.round(WEIGHTS.general * 100)}%
-                  {showCounts && (
-                    <div className="mt-1 text-[11px] text-neutral-500">
-                      Must {result._counts.must.matched}/{result._counts.must.total} ·
-                      Nice {result._counts.nice.matched}/{result._counts.nice.total} ·
-                      General {result._counts.general.matched}/{result._counts.general.total}
+            <div className="p-5">
+              <div className="space-y-4 rounded-2xl border border-blue-100 bg-white/95 p-5 shadow-lg shadow-blue-100/60">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <span className={pillClassFor(result.overallLabel)}>
+                          {result.overallLabel || "Match"}
+                        </span>
+                        <div className="mt-2 text-4xl font-semibold text-[#0f172a]">
+                          {result.overallScore}%
+                        </div>
+                      </div>
                     </div>
-                  )}
+                    <p className="mt-2 text-sm text-neutral-700">{result.summary}</p>
+                  </div>
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-[11px] text-blue-800">
+                    <div className="text-xs font-semibold text-blue-900">Weights</div>
+                    <div className="mt-1">
+                      Must {Math.round(WEIGHTS.must * 100)}% • Nice {Math.round(WEIGHTS.nice * 100)}% • General {Math.round(WEIGHTS.general * 100)}%
+                    </div>
+                    {showCounts && result._counts && (
+                      <div className="mt-1 text-[11px] text-blue-900/80">
+                        Must {result._counts.must.matched}/{result._counts.must.total} · Nice {result._counts.nice.matched}/{result._counts.nice.total} · General {result._counts.general.matched}/{result._counts.general.total}
+                      </div>
+                    )}
+                    {result._counts && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCounts((s) => !s)}
+                        className="mt-2 text-[11px] font-medium text-blue-900 underline"
+                      >
+                        {showCounts ? "Hide counts" : "Show counts"}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <ChipList title="Must-have matched" items={result.mustHaveMatched} tone="good" />
-                <ChipList title="Must-have missing" items={result.mustHaveMissing} tone="warn" />
-              </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <PillSection title="Must-have matched" items={result.must_have_matched} tone="match" />
+                  <PillSection title="Must-have gaps" items={result.must_have_missing} tone="gap" />
+                </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <ChipList title="Nice-to-have matched" items={result.niceToHaveMatched} tone="good" />
-                <ChipList title="Nice-to-have missing" items={result.niceToHaveMissing} tone="warn" />
-              </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <PillSection title="Nice-to-have matched" items={result.nice_to_have_matched} tone="match" />
+                  <PillSection title="Nice-to-have gaps" items={result.nice_to_have_missing} tone="gap" />
+                </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <ChipList title="General matched" items={result.generalMatched} tone="good" />
-                <ChipList title="General missing" items={result.generalMissing} tone="warn" />
-              </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <PillSection title="General matched" items={result.general_matched} tone="match" />
+                  <PillSection title="General gaps" items={result.general_missing} tone="gap" />
+                </div>
 
-              <div className="rounded-2xl border bg-neutral-50 p-4">
-                <div className="text-xs uppercase tracking-wide text-neutral-500">Recommendation</div>
-                <div className="mt-1 text-sm font-medium text-neutral-900">
-                  {result.verdict === "Strong match"
-                    ? "Proceed to final interview or reference check."
-                    : result.verdict === "Partial match"
-                    ? "Targeted validation: short case study or skills screen on missing must-haves."
-                    : "Hold or consider for future roles; gaps include core requirements."}
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+                  <div className="text-xs uppercase tracking-wide text-blue-800">Recommendation</div>
+                  <div className="mt-1 text-sm font-medium text-[#0f172a]">
+                    {result.overallLabel.toLowerCase().includes("strong")
+                      ? "Proceed to final interview or reference check."
+                      : result.overallLabel.toLowerCase().includes("moderate") ||
+                        result.overallLabel.toLowerCase().includes("partial")
+                      ? "Targeted validation: short case study or skills screen on missing must-haves."
+                      : "Hold or consider for future roles; gaps include core requirements."}
+                  </div>
                 </div>
               </div>
             </div>
